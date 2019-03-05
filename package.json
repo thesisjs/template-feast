@@ -1,0 +1,14 @@
+{
+  "name": "@thesis/thesis",
+  "version": "1.0.0",
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "git+https://gitlab.com/kaibito.thesis/thesis.git"
+  },
+  "author": "Kaibito Young",
+  "license": "MIT",
+  "dependencies": {
+    "jest": "^24.1.0"
+  }
+}

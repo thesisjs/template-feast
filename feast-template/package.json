@@ -1,0 +1,29 @@
+{
+  "name": "@thesis/feast-template",
+  "version": "1.0.0",
+  "description": "Feast template parser",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "../node_modules/.bin/jest"
+  },
+  "author": "Kaibito Young",
+  "license": "MIT",
+  "jest": {
+    "testRegex": "\\.tests\\.js$",
+    "testURL": "https://localhost/",
+    "transformIgnorePatterns": [
+      ".*"
+    ],
+    "moduleFileExtensions": [
+      "js",
+      "json"
+    ],
+    "coverageReporters": [
+      "html", "text"
+    ],
+    "coverageDirectory": "report",
+    "collectCoverageFrom": [
+      "src/*.js"
+    ]
+  }
+}
