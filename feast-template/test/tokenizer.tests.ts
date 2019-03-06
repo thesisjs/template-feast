@@ -194,12 +194,24 @@ describe('tokenizer source maps', () => {
 
 describe('tokenizer tags', () => {
 
-	test('self-closing no attributes', () => {
+	test('self-closing, no attributes', () => {
 		expect(
 			tokenize('<button/>')
 		).toMatchObject([
 			{type: TOKEN_TAG_OPEN},
 			{type: TOKEN_STRING, value: 'button'},
+			{type: TOKEN_FORWARD_SLASH},
+			{type: TOKEN_TAG_CLOSE},
+		]);
+	});
+
+	test('self-closing, one attribute without value', () => {
+		expect(
+			tokenize('<button disabled/>')
+		).toMatchObject([
+			{type: TOKEN_TAG_OPEN},
+			{type: TOKEN_STRING, value: 'button'},
+			{type: TOKEN_STRING, value: 'disabled'},
 			{type: TOKEN_FORWARD_SLASH},
 			{type: TOKEN_TAG_CLOSE},
 		]);
