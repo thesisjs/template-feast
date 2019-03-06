@@ -7,6 +7,19 @@ import {
 } from "../src/tokenizer";
 
 
+describe('tokenizer tokens', () => {
+
+	test('unicode', () => {
+		expect(
+			tokenize('🤔')
+		).toMatchObject([
+			{type: TOKEN_STRING, value: '🤔'},
+		]);
+	});
+
+});
+
+
 describe('tokenizer source maps', () => {
 
 	test('no spaces, no line breaks', () => {

@@ -82,8 +82,14 @@ function createSingleCharToken(type: TokenType, index: number, line: number, off
 }
 
 function endToken(source: string, token: IToken, tokenList: IToken[]): IToken {
-	// Correction for multi-char tokens
-	if (token.end.index - token.start.index > 1) {
+	const firstCharCode = source.charCodeAt(token.start.index);
+
+	if (
+		// Correction for multi-char tokens
+		token.end.index - token.start.index > 1 ||
+		// THe next symbol is a surrogate half
+		firstCharCode >= 0xD800 && firstCharCode <= 0xDBFF
+	) {
 		token.end.index++;
 		token.end.offset++;
 	}
