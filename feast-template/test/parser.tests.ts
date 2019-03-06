@@ -1,8 +1,15 @@
-import {parseFeastTemplate} from '../src';
+import {
+	parseFeastTemplate,
+	NODE_TAG,
+	NODE_TEMPLATE,
+} from "../src/parser";
 
-describe('parseFeastTemplate', () => {
+import {TOKEN_STRING} from "../src/tokenizer";
 
-	test('one self-closing 1', () => {
+
+describe('AST source maps', () => {
+
+	test('no spaces, no line breaks', () => {
 		expect(
 			parseFeastTemplate('<button/>'),
 		).toMatchObject({
@@ -35,10 +42,10 @@ describe('parseFeastTemplate', () => {
 					},
 				},
 			],
-		})
+		});
 	});
 
-	test('one self-closing 2', () => {
+	test('spaces, no line breaks', () => {
 		expect(
 			parseFeastTemplate('  <  button / >   '),
 		).toMatchObject({
@@ -71,10 +78,10 @@ describe('parseFeastTemplate', () => {
 					},
 				},
 			],
-		})
+		});
 	});
 
-	test('one self-closing 3', () => {
+	test('sapces, line breaks', () => {
 		expect(
 			parseFeastTemplate('  \n\t\t<  button\n\n\t\t />   ', {lineDelimiter: '\n'}),
 		).toMatchObject({
@@ -107,7 +114,29 @@ describe('parseFeastTemplate', () => {
 					},
 				},
 			],
-		})
+		});
+	});
+
+});
+
+
+describe('AST tags', () => {
+
+	test('one self-closing, no attributes', () => {
+		expect(
+			parseFeastTemplate('<button/>'),
+		).toMatchObject({
+			type: NODE_TEMPLATE,
+			children: [
+				{
+					type: NODE_TAG,
+					name: {
+						type: TOKEN_STRING,
+						value: 'button',
+					},
+				},
+			],
+		});
 	});
 
 });
