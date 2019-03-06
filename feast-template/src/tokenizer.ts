@@ -2,11 +2,13 @@
 export const TOKEN_TAG_OPEN = 'token::tag-open';
 export const TOKEN_STRING = 'token::string';
 export const TOKEN_FORWARD_SLASH = 'token::forward-slash';
+export const TOKEN_ASSIGN = 'token::assign';
 export const TOKEN_TAG_CLOSE = 'token::tag-close';
 
 export type TokenType = typeof TOKEN_TAG_OPEN |
 	typeof TOKEN_TAG_CLOSE |
 	typeof TOKEN_STRING |
+	typeof TOKEN_ASSIGN |
 	typeof TOKEN_FORWARD_SLASH;
 
 export interface ICodePosition {
@@ -152,6 +154,21 @@ export function tokenize(source: string, options: ITokenizerOptions = {}): IToke
 				}
 
 				currentToken = createSingleCharToken(TOKEN_TAG_OPEN, i, line, offset);
+
+				tokenList.push(currentToken);
+				currentToken = undefined;
+
+				break;
+			}
+
+			case 0x3D: // =
+			{
+				// Ending current token
+				if (currentToken && currentToken.type === TOKEN_STRING) {
+					currentToken = endToken(source, currentToken, tokenList);
+				}
+
+				currentToken = createSingleCharToken(TOKEN_ASSIGN, i, line, offset);
 
 				tokenList.push(currentToken);
 				currentToken = undefined;
