@@ -8,9 +8,35 @@ const STATE_TAG_CLOSING = 4;
 const NODE_TEMPLATE = 'feast::template';
 const NODE_TAG = 'feast::tag';
 
+interface ICodePosition {
+	index: number;
+	line: number;
+	offset: number;
+}
+
+interface IToken {
+	start?: ICodePosition;
+	end?: ICodePosition;
+	value?: string;
+}
+
+interface IASTNode {
+	type: typeof NODE_TEMPLATE | typeof NODE_TAG;
+	start?: ICodePosition;
+	end?: ICodePosition;
+	name?: IToken;
+	parent?: IASTNode;
+	children?: IASTNode[];
+}
 
 class LineDelimiterMatcher {
-	constructor(targetDelimiter) {
+	private head: string;
+	private tail: string;
+	private targetHead: string;
+	private targetTail: string;
+	private multiChar: boolean;
+
+	constructor(targetDelimiter?: string) {
 		if (targetDelimiter === undefined) {
 			const os = require('os');
 			targetDelimiter = os.EOL;
@@ -24,7 +50,7 @@ class LineDelimiterMatcher {
 		}
 	}
 
-	push(char) {
+	push(char: string) {
 		if (this.head && this.multiChar) {
 			this.tail = this.head;
 		}
@@ -42,7 +68,7 @@ class LineDelimiterMatcher {
 	}
 }
 
-function raiseError(line, offset, message) {
+function raiseError(line: number, offset: number, message: string) {
 	return {
 		error: message,
 		line,
@@ -50,17 +76,13 @@ function raiseError(line, offset, message) {
 	}
 }
 
-/**
- * @param {string} source
- * @param {{
- *     sourceMaps?: boolean,
- *     lineDelimiter?: string
- * }} [options]
- */
-function parseFeastTemplate(source, options) {
-	options = options || {};
+interface IParserOptions {
+	sourceMaps?: boolean;
+	lineDelimiter?: string;
+}
 
-	let currentAstNode = {
+export function parseFeastTemplate(source: string, options: IParserOptions = {}) {
+	let currentAstNode: IASTNode = {
 		type: NODE_TEMPLATE,
 		children: [],
 	};
@@ -240,7 +262,3 @@ function parseFeastTemplate(source, options) {
 
 	return currentAstNode;
 }
-
-module.exports = {
-	parseFeastTemplate,
-};

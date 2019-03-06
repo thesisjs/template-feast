@@ -1,4 +1,4 @@
-const {parseFeastTemplate} = require('../src/index');
+import {parseFeastTemplate} from '../src';
 
 describe('parseFeastTemplate', () => {
 
