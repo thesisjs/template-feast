@@ -142,6 +142,8 @@ export function parseFeastTemplate(source: string, options: IParserOptions = {})
 				{
 					case STATE_TAG_CLOSING:
 					{
+						state = STATE_INITIAL;
+
 						currentNode.end = token.end;
 						currentNode = pushNode(currentNode);
 

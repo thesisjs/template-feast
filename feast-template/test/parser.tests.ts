@@ -139,4 +139,28 @@ describe('AST tags', () => {
 		});
 	});
 
+	test('two self-closing, no attributes', () => {
+		expect(
+			parseFeastTemplate('<button/><i/>'),
+		).toMatchObject({
+			type: NODE_TEMPLATE,
+			children: [
+				{
+					type: NODE_TAG,
+					name: {
+						type: TOKEN_STRING,
+						value: 'button',
+					},
+				},
+				{
+					type: NODE_TAG,
+					name: {
+						type: TOKEN_STRING,
+						value: 'i',
+					},
+				},
+			],
+		});
+	});
+
 });

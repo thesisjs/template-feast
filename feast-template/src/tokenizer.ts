@@ -82,8 +82,11 @@ function createSingleCharToken(type: TokenType, index: number, line: number, off
 }
 
 function endToken(source: string, token: IToken, tokenList: IToken[]): IToken {
-	token.end.index++;
-	token.end.offset++;
+	// Correction for multi-char tokens
+	if (token.end.index - token.start.index > 1) {
+		token.end.index++;
+		token.end.offset++;
+	}
 
 	token.value = source.substring(
 		token.start.index,
