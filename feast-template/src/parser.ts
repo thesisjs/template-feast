@@ -10,23 +10,30 @@ import {
 
 const STATE_INITIAL = 0;
 const STATE_TAG_OPEN = 1;
-const STATE_TAG_ATTRIBUTES = 2;
-const STATE_TAG_CLOSING = 3;
+const STATE_TAG_ATTRIBUTE_NAME = 2;
+const STATE_TAG_ATTRIBUTE_ASSIGN = 3;
+const STATE_TAG_CLOSING = 4;
 
 export const NODE_TEMPLATE = 'feast::template';
 export const NODE_TAG = 'feast::tag';
 export const NODE_ERROR = 'feast::error';
+export const NODE_ATTRIBUTE = 'feast::attribute';
+export const NODE_ATTRIBUTE_NAME = 'feast::attribute-name';
+export const NODE_ATTRIBUTE_VALUE = 'feast::attribute-value';
 
 type ASTNodeType = typeof NODE_TEMPLATE
 	| typeof NODE_TAG
-	| typeof NODE_ERROR;
+	| typeof NODE_ERROR
+	| typeof NODE_ATTRIBUTE
+	| typeof NODE_ATTRIBUTE_NAME
+	| typeof NODE_ATTRIBUTE_VALUE;
 
 
 interface IASTNode {
 	type: ASTNodeType;
 	start?: ICodePosition;
 	end?: ICodePosition;
-	name?: IToken;
+	value?: IToken;
 	parent?: IASTNode;
 	children?: IASTNode[];
 }
@@ -39,8 +46,8 @@ interface IParserOptions {
 function raiseError(token: IToken, message: string): IASTNode {
 	return {
 		type: NODE_ERROR,
-		name: {
-			type: TOKEN_STRING,
+		value: {
+			type: token.type,
 			start: token.start,
 			end: token.end,
 			value: message,
@@ -101,8 +108,55 @@ export function parseFeastTemplate(source: string, options: IParserOptions = {})
 				{
 					case STATE_TAG_OPEN:
 					{
-						state = STATE_TAG_ATTRIBUTES;
-						currentNode.name = token;
+						state = STATE_TAG_ATTRIBUTE_NAME;
+						currentNode.value = token;
+
+						currentNode = {
+							type: NODE_ATTRIBUTE,
+							parent: currentNode,
+							start: token.start,
+						};
+
+						break;
+					}
+
+					case STATE_TAG_ATTRIBUTE_NAME:
+					{
+						state = STATE_TAG_ATTRIBUTE_ASSIGN;
+
+						currentNode = {
+							type: NODE_ATTRIBUTE_NAME,
+							parent: currentNode,
+							start: token.start,
+							end: token.end,
+							value: token,
+						};
+
+						break;
+					}
+
+					case STATE_TAG_ATTRIBUTE_ASSIGN:
+					{
+						// Restoring attribute node
+						currentNode = pushNode(currentNode);
+						// Restoring tag node
+						currentNode = pushNode(currentNode);
+
+						// Creating new attribute node
+						currentNode = {
+							type: NODE_ATTRIBUTE,
+							parent: currentNode,
+							start: token.start,
+						};
+
+						// Creating new attribute name node
+						currentNode = {
+							type: NODE_ATTRIBUTE_NAME,
+							parent: currentNode,
+							start: token.start,
+							end: token.end,
+							value: token,
+						};
 
 						break;
 					}
@@ -120,9 +174,24 @@ export function parseFeastTemplate(source: string, options: IParserOptions = {})
 			{
 				switch (state)
 				{
-					case STATE_TAG_ATTRIBUTES:
+					case STATE_TAG_ATTRIBUTE_NAME:
 					{
 						state = STATE_TAG_CLOSING;
+
+						// Restoring tag node
+						currentNode = pushNode(currentNode);
+
+						break;
+					}
+
+					case STATE_TAG_ATTRIBUTE_ASSIGN:
+					{
+						state = STATE_TAG_CLOSING;
+
+						// Restoring attribute node
+						currentNode = pushNode(currentNode);
+						// Restoring tag node
+						currentNode = pushNode(currentNode);
 
 						break;
 					}

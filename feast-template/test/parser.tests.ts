@@ -2,6 +2,8 @@ import {
 	parseFeastTemplate,
 	NODE_TAG,
 	NODE_TEMPLATE,
+	NODE_ATTRIBUTE,
+	NODE_ATTRIBUTE_NAME,
 } from "../src/parser";
 
 import {TOKEN_STRING} from "../src/tokenizer";
@@ -27,7 +29,7 @@ describe('AST source maps', () => {
 						line: 1,
 						offset: 10,
 					},
-					name: {
+					value: {
 						start: {
 							index: 1,
 							line: 1,
@@ -63,7 +65,7 @@ describe('AST source maps', () => {
 						line: 1,
 						offset: 16,
 					},
-					name: {
+					value: {
 						start: {
 							index: 5,
 							line: 1,
@@ -99,7 +101,7 @@ describe('AST source maps', () => {
 						line: 4,
 						offset: 6,
 					},
-					name: {
+					value: {
 						start: {
 							index: 8,
 							line: 2,
@@ -130,7 +132,7 @@ describe('AST tags', () => {
 			children: [
 				{
 					type: NODE_TAG,
-					name: {
+					value: {
 						type: TOKEN_STRING,
 						value: 'button',
 					},
@@ -147,17 +149,91 @@ describe('AST tags', () => {
 			children: [
 				{
 					type: NODE_TAG,
-					name: {
+					value: {
 						type: TOKEN_STRING,
 						value: 'button',
 					},
 				},
 				{
 					type: NODE_TAG,
-					name: {
+					value: {
 						type: TOKEN_STRING,
 						value: 'i',
 					},
+				},
+			],
+		});
+	});
+
+	test('one self-closing, one attribute without a value', () => {
+		expect(
+			parseFeastTemplate('<button disabled/>'),
+		).toMatchObject({
+			type: NODE_TEMPLATE,
+			children: [
+				{
+					type: NODE_TAG,
+					value: {
+						type: TOKEN_STRING,
+						value: 'button',
+					},
+					children: [
+						{
+							type: NODE_ATTRIBUTE,
+							children: [
+								{
+									type: NODE_ATTRIBUTE_NAME,
+									value: {
+										type: TOKEN_STRING,
+										value: 'disabled',
+									},
+								},
+							],
+						},
+					],
+				},
+			],
+		});
+	});
+
+	test('one self-closing, two attributes without a value', () => {
+		expect(
+			parseFeastTemplate('<button 1 data-id/>'),
+		).toMatchObject({
+			type: NODE_TEMPLATE,
+			children: [
+				{
+					type: NODE_TAG,
+					value: {
+						type: TOKEN_STRING,
+						value: 'button',
+					},
+					children: [
+						{
+							type: NODE_ATTRIBUTE,
+							children: [
+								{
+									type: NODE_ATTRIBUTE_NAME,
+									value: {
+										type: TOKEN_STRING,
+										value: '1',
+									},
+								},
+							],
+						},
+						{
+							type: NODE_ATTRIBUTE,
+							children: [
+								{
+									type: NODE_ATTRIBUTE_NAME,
+									value: {
+										type: TOKEN_STRING,
+										value: 'data-id',
+									},
+								},
+							],
+						},
+					],
 				},
 			],
 		});
