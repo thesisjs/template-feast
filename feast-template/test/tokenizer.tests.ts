@@ -2,6 +2,7 @@ import {
 	tokenize,
 	TOKEN_TAG_OPEN,
 	TOKEN_STRING,
+	TOKEN_SINGLE_QUOTED_STRING,
 	TOKEN_FORWARD_SLASH,
 	TOKEN_TAG_CLOSE, TOKEN_ASSIGN,
 } from "../src/tokenizer";
@@ -254,6 +255,20 @@ describe('tokenizer tags', () => {
 			{type: TOKEN_STRING, value: 'onclick'},
 			{type: TOKEN_ASSIGN},
 			{type: TOKEN_STRING, value: 'alert()'},
+			{type: TOKEN_FORWARD_SLASH},
+			{type: TOKEN_TAG_CLOSE},
+		]);
+	});
+
+	test('one self-closing, one attribute with single-quoted', () => {
+		expect(
+			tokenize('<button title=\'🦊 click me! 🦊\'/>')
+		).toMatchObject([
+			{type: TOKEN_TAG_OPEN},
+			{type: TOKEN_STRING, value: 'button'},
+			{type: TOKEN_STRING, value: 'onclick'},
+			{type: TOKEN_ASSIGN},
+			{type: TOKEN_SINGLE_QUOTED_STRING, value: '🦊 click me! 🦊'},
 			{type: TOKEN_FORWARD_SLASH},
 			{type: TOKEN_TAG_CLOSE},
 		]);

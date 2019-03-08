@@ -1,6 +1,7 @@
 
 export const TOKEN_TAG_OPEN = 'token::tag-open';
 export const TOKEN_STRING = 'token::string';
+export const TOKEN_SINGLE_QUOTED_STRING = 'token::single-quoted-string';
 export const TOKEN_FORWARD_SLASH = 'token::forward-slash';
 export const TOKEN_ASSIGN = 'token::assign';
 export const TOKEN_TAG_CLOSE = 'token::tag-close';
@@ -8,6 +9,7 @@ export const TOKEN_TAG_CLOSE = 'token::tag-close';
 export type TokenType = typeof TOKEN_TAG_OPEN |
 	typeof TOKEN_TAG_CLOSE |
 	typeof TOKEN_STRING |
+	typeof TOKEN_SINGLE_QUOTED_STRING |
 	typeof TOKEN_ASSIGN |
 	typeof TOKEN_FORWARD_SLASH;
 
@@ -117,9 +119,11 @@ export function tokenize(source: string, options: ITokenizerOptions = {}): IToke
 	let offset = 1;
 
 	let charCode;
+	let tokenType;
 
 	do {
 		charCode = source.charCodeAt(i);
+		tokenType = currentToken && currentToken.type;
 
 		switch (charCode)
 		{
@@ -128,18 +132,25 @@ export function tokenize(source: string, options: ITokenizerOptions = {}): IToke
 			case 0xA: // LF
 			case 0xD: // CR
 			{
-				// Ending current token
-				if (currentToken && currentToken.type === TOKEN_STRING) {
-					currentToken = endToken(source, currentToken, tokenList);
-				}
+				switch (tokenType)
+				{
+					case TOKEN_STRING:
+					{
+						currentToken = endToken(source, currentToken, tokenList);
+						// No break
+					}
 
-				if (charCode === 0xA || charCode === 0xD) {
-					lineDelimiterMatcher.push(source.substring(i, i + 1));
+					default:
+					{
+						if (charCode === 0xA || charCode === 0xD) {
+							lineDelimiterMatcher.push(source.substring(i, i + 1));
 
-					if (lineDelimiterMatcher.matches()) {
-						lineDelimiterMatcher.clear();
-						offset = 1;
-						line++;
+							if (lineDelimiterMatcher.matches()) {
+								lineDelimiterMatcher.clear();
+								offset = 1;
+								line++;
+							}
+						}
 					}
 				}
 
@@ -148,60 +159,97 @@ export function tokenize(source: string, options: ITokenizerOptions = {}): IToke
 
 			case 0x3C: // <
 			{
-				// Ending current token
-				if (currentToken && currentToken.type === TOKEN_STRING) {
-					currentToken = endToken(source, currentToken, tokenList);
+				switch (tokenType)
+				{
+					case TOKEN_STRING:
+					{
+						currentToken = endToken(source, currentToken, tokenList);
+						// No break
+					}
+
+					default:
+					{
+						currentToken = createSingleCharToken(TOKEN_TAG_OPEN, i, line, offset);
+						tokenList.push(currentToken);
+						currentToken = undefined;
+
+						break;
+					}
 				}
-
-				currentToken = createSingleCharToken(TOKEN_TAG_OPEN, i, line, offset);
-
-				tokenList.push(currentToken);
-				currentToken = undefined;
 
 				break;
 			}
 
 			case 0x3D: // =
 			{
-				// Ending current token
-				if (currentToken && currentToken.type === TOKEN_STRING) {
-					currentToken = endToken(source, currentToken, tokenList);
+				switch (tokenType)
+				{
+					case TOKEN_STRING:
+					{
+						currentToken = endToken(source, currentToken, tokenList);
+						// No break
+					}
+
+					default:
+					{
+						currentToken = createSingleCharToken(TOKEN_ASSIGN, i, line, offset);
+						tokenList.push(currentToken);
+						currentToken = undefined;
+
+						break;
+					}
 				}
 
-				currentToken = createSingleCharToken(TOKEN_ASSIGN, i, line, offset);
+				break;
+			}
 
-				tokenList.push(currentToken);
-				currentToken = undefined;
-
+			case 0x27: // '
+			{
 				break;
 			}
 
 			case 0x2F: // /
 			{
-				// Ending current token
-				if (currentToken && currentToken.type === TOKEN_STRING) {
-					currentToken = endToken(source, currentToken, tokenList);
+				switch (tokenType)
+				{
+					case TOKEN_STRING:
+					{
+						currentToken = endToken(source, currentToken, tokenList);
+						// No break
+					}
+
+					default:
+					{
+						currentToken = createSingleCharToken(TOKEN_FORWARD_SLASH, i, line, offset);
+						tokenList.push(currentToken);
+						currentToken = undefined;
+
+						break;
+					}
 				}
-
-				currentToken = createSingleCharToken(TOKEN_FORWARD_SLASH, i, line, offset);
-
-				tokenList.push(currentToken);
-				currentToken = undefined;
 
 				break;
 			}
 
 			case 0x3E: // >
 			{
-				// Ending current token
-				if (currentToken && currentToken.type === TOKEN_STRING) {
-					currentToken = endToken(source, currentToken, tokenList);
+				switch (tokenType)
+				{
+					case TOKEN_STRING:
+					{
+						currentToken = endToken(source, currentToken, tokenList);
+						// No break
+					}
+
+					default:
+					{
+						currentToken = createSingleCharToken(TOKEN_TAG_CLOSE, i, line, offset);
+						tokenList.push(currentToken);
+						currentToken = undefined;
+
+						break;
+					}
 				}
-
-				currentToken = createSingleCharToken(TOKEN_TAG_CLOSE, i, line, offset);
-
-				tokenList.push(currentToken);
-				currentToken = undefined;
 
 				break;
 			}
