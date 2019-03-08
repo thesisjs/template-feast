@@ -4,8 +4,10 @@ import {
 	TOKEN_STRING,
 	TOKEN_SINGLE_QUOTED_STRING,
 	TOKEN_DOUBLE_QUOTED_STRING,
+	TOKEN_EXPRESSION,
 	TOKEN_FORWARD_SLASH,
-	TOKEN_TAG_CLOSE, TOKEN_ASSIGN,
+	TOKEN_TAG_CLOSE,
+	TOKEN_ASSIGN,
 } from "../src/tokenizer";
 
 
@@ -284,6 +286,20 @@ describe('tokenizer tags', () => {
 			{type: TOKEN_STRING, value: 'title'},
 			{type: TOKEN_ASSIGN},
 			{type: TOKEN_DOUBLE_QUOTED_STRING, value: `<🦊> 'click' me! </🦊>`},
+			{type: TOKEN_FORWARD_SLASH},
+			{type: TOKEN_TAG_CLOSE},
+		]);
+	});
+
+	test('one self-closing, one attribute with expressions', () => {
+		expect(
+			tokenize(`<button onclick={console.log('debug', {t: '<🦊>Hello!</🦊>'})}/>`)
+		).toMatchObject([
+			{type: TOKEN_TAG_OPEN},
+			{type: TOKEN_STRING, value: 'button'},
+			{type: TOKEN_STRING, value: 'onclick'},
+			{type: TOKEN_ASSIGN},
+			{type: TOKEN_EXPRESSION, value: `console.log('debug', {t: '<🦊>Hello!</🦊>'})`},
 			{type: TOKEN_FORWARD_SLASH},
 			{type: TOKEN_TAG_CLOSE},
 		]);

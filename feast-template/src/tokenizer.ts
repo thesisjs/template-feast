@@ -3,6 +3,7 @@ export const TOKEN_TAG_OPEN = 'token::tag-open';
 export const TOKEN_STRING = 'token::string';
 export const TOKEN_SINGLE_QUOTED_STRING = 'token::single-quoted-string';
 export const TOKEN_DOUBLE_QUOTED_STRING = 'token::double-quoted-string';
+export const TOKEN_EXPRESSION = 'token::expression';
 export const TOKEN_FORWARD_SLASH = 'token::forward-slash';
 export const TOKEN_ASSIGN = 'token::assign';
 export const TOKEN_TAG_CLOSE = 'token::tag-close';
@@ -12,6 +13,7 @@ export type TokenType = typeof TOKEN_TAG_OPEN |
 	typeof TOKEN_STRING |
 	typeof TOKEN_SINGLE_QUOTED_STRING |
 	typeof TOKEN_DOUBLE_QUOTED_STRING |
+	typeof TOKEN_EXPRESSION |
 	typeof TOKEN_ASSIGN |
 	typeof TOKEN_FORWARD_SLASH;
 
@@ -122,6 +124,7 @@ export function tokenize(source: string, options: ITokenizerOptions = {}): IToke
 
 	let charCode;
 	let tokenType;
+	let curlyBrackets = 0;
 
 	do {
 		charCode = source.charCodeAt(i);
@@ -138,6 +141,7 @@ export function tokenize(source: string, options: ITokenizerOptions = {}): IToke
 				{
 					case TOKEN_SINGLE_QUOTED_STRING:
 					case TOKEN_DOUBLE_QUOTED_STRING:
+					case TOKEN_EXPRESSION:
 					{
 						currentToken.end.index = i;
 						currentToken.end.line = line;
@@ -175,6 +179,7 @@ export function tokenize(source: string, options: ITokenizerOptions = {}): IToke
 				{
 					case TOKEN_SINGLE_QUOTED_STRING:
 					case TOKEN_DOUBLE_QUOTED_STRING:
+					case TOKEN_EXPRESSION:
 					{
 						currentToken.end.index = i;
 						currentToken.end.line = line;
@@ -208,6 +213,7 @@ export function tokenize(source: string, options: ITokenizerOptions = {}): IToke
 				{
 					case TOKEN_SINGLE_QUOTED_STRING:
 					case TOKEN_DOUBLE_QUOTED_STRING:
+					case TOKEN_EXPRESSION:
 					{
 						currentToken.end.index = i;
 						currentToken.end.line = line;
@@ -246,6 +252,7 @@ export function tokenize(source: string, options: ITokenizerOptions = {}): IToke
 					}
 
 					case TOKEN_DOUBLE_QUOTED_STRING:
+					case TOKEN_EXPRESSION:
 					{
 						currentToken.end.index = i;
 						currentToken.end.line = line;
@@ -277,6 +284,7 @@ export function tokenize(source: string, options: ITokenizerOptions = {}): IToke
 			{
 				switch (tokenType) {
 					case TOKEN_SINGLE_QUOTED_STRING:
+					case TOKEN_EXPRESSION:
 					{
 						currentToken.end.index = i;
 						currentToken.end.line = line;
@@ -311,12 +319,78 @@ export function tokenize(source: string, options: ITokenizerOptions = {}): IToke
 				break;
 			}
 
+			case 0x7B: // {
+			{
+				switch (tokenType) {
+					case TOKEN_EXPRESSION:
+					{
+						currentToken.end.index = i;
+						currentToken.end.line = line;
+						currentToken.end.offset = offset;
+
+						curlyBrackets++;
+						break;
+					}
+
+					default:
+					{
+						if (currentToken) {
+							currentToken = endToken(source, currentToken, tokenList);
+						}
+
+						currentToken = createSingleCharToken(
+							TOKEN_EXPRESSION,
+							i + 1,
+							line,
+							offset + 1
+						);
+
+						curlyBrackets++;
+						break;
+					}
+				}
+
+				break;
+			}
+
+			case 0x7D: // }
+			{
+				switch (tokenType) {
+					case TOKEN_EXPRESSION:
+					{
+						curlyBrackets--;
+
+						if (curlyBrackets === 0) {
+							currentToken = endToken(source, currentToken, tokenList);
+						} else {
+							currentToken.end.index = i;
+							currentToken.end.line = line;
+							currentToken.end.offset = offset;
+						}
+
+						break;
+					}
+
+					default:
+					{
+						currentToken.end.index = i;
+						currentToken.end.line = line;
+						currentToken.end.offset = offset;
+
+						break;
+					}
+				}
+
+				break;
+			}
+
 			case 0x2F: // /
 			{
 				switch (tokenType)
 				{
 					case TOKEN_SINGLE_QUOTED_STRING:
 					case TOKEN_DOUBLE_QUOTED_STRING:
+					case TOKEN_EXPRESSION:
 					{
 						currentToken.end.index = i;
 						currentToken.end.line = line;
@@ -350,6 +424,7 @@ export function tokenize(source: string, options: ITokenizerOptions = {}): IToke
 				{
 					case TOKEN_SINGLE_QUOTED_STRING:
 					case TOKEN_DOUBLE_QUOTED_STRING:
+					case TOKEN_EXPRESSION:
 					{
 						currentToken.end.index = i;
 						currentToken.end.line = line;
