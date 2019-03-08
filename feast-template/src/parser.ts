@@ -6,12 +6,14 @@ import {
 	TOKEN_FORWARD_SLASH,
 	TOKEN_STRING,
 	TOKEN_TAG_CLOSE,
+	TOKEN_ASSIGN,
 } from "./tokenizer";
 
 const STATE_INITIAL = 0;
 const STATE_TAG_OPEN = 1;
 const STATE_TAG_ATTRIBUTE_NAME = 2;
 const STATE_TAG_ATTRIBUTE_ASSIGN = 3;
+const STATE_TAG_ATTRIBUTE_VALUE = 4;
 const STATE_TAG_CLOSING = 4;
 
 export const NODE_TEMPLATE = 'feast::template';
@@ -111,18 +113,18 @@ export function parseFeastTemplate(source: string, options: IParserOptions = {})
 						state = STATE_TAG_ATTRIBUTE_NAME;
 						currentNode.value = token;
 
-						currentNode = {
-							type: NODE_ATTRIBUTE,
-							parent: currentNode,
-							start: token.start,
-						};
-
 						break;
 					}
 
 					case STATE_TAG_ATTRIBUTE_NAME:
 					{
 						state = STATE_TAG_ATTRIBUTE_ASSIGN;
+
+						currentNode = {
+							type: NODE_ATTRIBUTE,
+							parent: currentNode,
+							start: token.start,
+						};
 
 						currentNode = {
 							type: NODE_ATTRIBUTE_NAME,
@@ -132,13 +134,34 @@ export function parseFeastTemplate(source: string, options: IParserOptions = {})
 							value: token,
 						};
 
+						// Restoring attribute node
+						currentNode = pushNode(currentNode);
+
+						break;
+					}
+
+					case STATE_TAG_ATTRIBUTE_VALUE:
+					{
+						state = STATE_TAG_ATTRIBUTE_NAME;
+
+						currentNode = {
+							type: NODE_ATTRIBUTE_VALUE,
+							parent: currentNode,
+							start: token.start,
+							end: token.end,
+							value: token,
+						};
+
+						// Restoring attribute node
+						currentNode = pushNode(currentNode);
+						// Restoring tag node
+						currentNode = pushNode(currentNode);
+
 						break;
 					}
 
 					case STATE_TAG_ATTRIBUTE_ASSIGN:
 					{
-						// Restoring attribute node
-						currentNode = pushNode(currentNode);
 						// Restoring tag node
 						currentNode = pushNode(currentNode);
 
@@ -158,12 +181,35 @@ export function parseFeastTemplate(source: string, options: IParserOptions = {})
 							value: token,
 						};
 
+						// Restoring attribute node
+						currentNode = pushNode(currentNode);
+
 						break;
 					}
 
 					default:
 					{
 						return raiseError(token, 'Tag opening expected');
+					}
+				}
+
+				break;
+			}
+
+			case TOKEN_ASSIGN:
+			{
+				switch (state)
+				{
+					case STATE_TAG_ATTRIBUTE_ASSIGN:
+					{
+						state = STATE_TAG_ATTRIBUTE_VALUE;
+
+						break;
+					}
+
+					default:
+					{
+						return raiseError(token, 'Tag attribute value assignment expected');
 					}
 				}
 
@@ -178,9 +224,6 @@ export function parseFeastTemplate(source: string, options: IParserOptions = {})
 					{
 						state = STATE_TAG_CLOSING;
 
-						// Restoring tag node
-						currentNode = pushNode(currentNode);
-
 						break;
 					}
 
@@ -188,8 +231,6 @@ export function parseFeastTemplate(source: string, options: IParserOptions = {})
 					{
 						state = STATE_TAG_CLOSING;
 
-						// Restoring attribute node
-						currentNode = pushNode(currentNode);
 						// Restoring tag node
 						currentNode = pushNode(currentNode);
 

@@ -4,6 +4,7 @@ import {
 	NODE_TEMPLATE,
 	NODE_ATTRIBUTE,
 	NODE_ATTRIBUTE_NAME,
+	NODE_ATTRIBUTE_VALUE,
 } from "../src/parser";
 
 import {TOKEN_STRING} from "../src/tokenizer";
@@ -229,6 +230,44 @@ describe('AST tags', () => {
 									value: {
 										type: TOKEN_STRING,
 										value: 'data-id',
+									},
+								},
+							],
+						},
+					],
+				},
+			],
+		});
+	});
+
+	test('one self-closing, one attribute with a value', () => {
+		expect(
+			parseFeastTemplate('<button onclick=alert()/>'),
+		).toMatchObject({
+			type: NODE_TEMPLATE,
+			children: [
+				{
+					type: NODE_TAG,
+					value: {
+						type: TOKEN_STRING,
+						value: 'button',
+					},
+					children: [
+						{
+							type: NODE_ATTRIBUTE,
+							children: [
+								{
+									type: NODE_ATTRIBUTE_NAME,
+									value: {
+										type: TOKEN_STRING,
+										value: 'onclick',
+									},
+								},
+								{
+									type: NODE_ATTRIBUTE_VALUE,
+									value: {
+										type: TOKEN_STRING,
+										value: 'alert()',
 									},
 								},
 							],
