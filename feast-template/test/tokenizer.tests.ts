@@ -349,6 +349,8 @@ describe('tokenizer expressions', () => {
 	});
 
 	test('single-quoted template expression', () => {
+		const t = tokenize(`<button title='Hello, {l("debug", {t: '</🦊>'})}! {name} are my friend'/>`);
+
 		expect(
 			tokenize(`<button title='Hello, {l("debug", {t: '</🦊>'})}! {name} are my friend'/>`)
 		).toMatchObject([
@@ -366,7 +368,7 @@ describe('tokenizer expressions', () => {
 		]);
 	});
 
-	test('souble-quoted template expression', () => {
+	test('double-quoted template expression', () => {
 		expect(
 			tokenize(`<button title="Hello, {l("debug", {t: '</🦊>'})}! {name} are my friend"/>`)
 		).toMatchObject([

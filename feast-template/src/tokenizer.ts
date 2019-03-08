@@ -29,6 +29,9 @@ export type TokenType = typeof TOKEN_TAG_OPEN |
 	typeof TOKEN_ASSIGN |
 	typeof TOKEN_FORWARD_SLASH;
 
+const DEFAULT: any = null;
+
+
 export interface ICodePosition {
 	index: number;
 	line: number;
@@ -41,6 +44,11 @@ export interface IToken {
 	end?: ICodePosition;
 	value?: string;
 }
+
+export interface ITokenizerOptions {
+	lineDelimiter?: string;
+}
+
 
 class LineDelimiterMatcher {
 	private head: string;
@@ -81,8 +89,56 @@ class LineDelimiterMatcher {
 	}
 }
 
-export interface ITokenizerOptions {
-	lineDelimiter?: string;
+type TokenizerSwitchHandler = (tokenizer: Tokenizer, charCode: number) => any;
+
+class Tokenizer {
+	private static cases: {[key: string]: {[key: string]: TokenizerSwitchHandler}} = {};
+
+	static switch(charCode: number | null, tokenType: TokenType | null, handler: TokenizerSwitchHandler) {
+		Tokenizer.cases[charCode] = Tokenizer.cases[charCode] || {};
+		Tokenizer.cases[charCode][<string> <unknown> tokenType] = handler;
+	}
+
+	constructor(public source: string, public lineDelimiterMatcher: LineDelimiterMatcher) {};
+
+	public tokenList: IToken[] = [];
+	public currentToken: IToken;
+	public index = 0;
+	public line = 1;
+	public offset = 1;
+	public curlyBrackets = 0;
+
+	consume(charCode: number, tokenType: TokenType) {
+		const transitions = Tokenizer.cases[charCode] || Tokenizer.cases[DEFAULT];
+		let handler;
+
+		if (transitions) {
+			handler = transitions[tokenType] || transitions[DEFAULT];
+		}
+
+		if (handler) {
+			handler(this, charCode);
+		}
+	}
+
+	endToken() {
+		const firstCharCode = this.source.charCodeAt(this.currentToken.start.index);
+
+		if (
+			// Correction for multi-char tokens
+			this.currentToken.end.index - this.currentToken.start.index > 1 ||
+			// The next symbol is a surrogate half
+			firstCharCode >= 0xD800 && firstCharCode <= 0xDBFF
+		) {
+			this.currentToken.end.index++;
+			this.currentToken.end.offset++;
+		}
+
+		updateTokenValue(this.source, this.currentToken);
+
+		this.tokenList.push(this.currentToken);
+		this.currentToken = undefined;
+	}
 }
 
 function createSingleCharToken(type: TokenType, index: number, line: number, offset: number): IToken {
@@ -113,566 +169,290 @@ function updateTokenValue(source: string, token: IToken) {
 	);
 }
 
-function endToken(source: string, token: IToken, tokenList: IToken[]): IToken {
-	const firstCharCode = source.charCodeAt(token.start.index);
+const CHAR_SPACE = 0x20;
+const CHAR_TAB = 0x9;
+const CHAR_LF = 0xA;
+const CHAR_CR = 0xD;
+const CHAR_TAG_START = 0x3C; // <
+const CHAR_TAG_END = 0x3E; // >
+const CHAR_EQUALITY_SYMBOL = 0x3D; // =
+const CHAR_SINGLE_QUOTE = 0x27; // '
+const CHAR_DOUBLE_QUOTE = 0x22; // "
+const CHAR_OPEN_CURLY = 0x7B; // {
+const CHAR_CLOSE_CURLY = 0x7D; // }
+const CHAR_FORWARD_SLASH = 0x2F; // /
 
-	if (
-		// Correction for multi-char tokens
-		token.end.index - token.start.index > 1 ||
-		// THe next symbol is a surrogate half
-		firstCharCode >= 0xD800 && firstCharCode <= 0xDBFF
-	) {
-		token.end.index++;
-		token.end.offset++;
+
+function ruleEndToken(t: Tokenizer) {
+	if (t.currentToken) {
+		t.endToken();
 	}
-
-	updateTokenValue(source, token);
-
-	tokenList.push(token);
-
-	return undefined;
 }
 
+function ruleBreakNewLine(t: Tokenizer, charCode: number) {
+	if (charCode === 0xA || charCode === 0xD) {
+		t.lineDelimiterMatcher.push(t.source.substring(t.index, t.index + 1));
+
+		if (t.lineDelimiterMatcher.matches()) {
+			t.lineDelimiterMatcher.clear();
+			t.offset = 1;
+			t.line++;
+		}
+	}
+}
+
+function ruleEndTokenAndBreakNewLine(t: Tokenizer, charCode: number) {
+	ruleEndToken(t);
+	ruleBreakNewLine(t, charCode);
+}
+
+function ruleIncToken(t: Tokenizer) {
+	t.currentToken.end.index = t.index;
+	t.currentToken.end.line = t.line;
+	t.currentToken.end.offset = t.offset;
+}
+
+function ruleIncCurly(t: Tokenizer) {
+	t.curlyBrackets++;
+}
+
+function ruleDecCurly(t: Tokenizer) {
+	t.curlyBrackets--;
+}
+
+function ruleIncTokenAndCurly(t: Tokenizer) {
+	ruleIncToken(t);
+	ruleIncCurly(t);
+}
+
+function ruleIncAndTrimToken(t: Tokenizer) {
+	t.currentToken.end.index = t.index - 1;
+	t.currentToken.end.line = t.line;
+	t.currentToken.end.offset = t.offset - 1;
+}
+
+function ruleIncTrimAndEndToken(t: Tokenizer) {
+	ruleIncAndTrimToken(t);
+	ruleEndToken(t);
+}
+
+function ruleFactoryCreateToken(tokenType: TokenType, offset = 0) {
+	return function ruleCreateToken(t: Tokenizer) {
+		t.currentToken = createSingleCharToken(
+			tokenType,
+			t.index + offset,
+			t.line,
+			t.offset + offset
+		);
+
+		t.tokenList.push(t.currentToken);
+		t.currentToken = undefined;
+	}
+}
+
+function ruleFactoryEndAndCreateToken(tokenType: TokenType, offset = 0) {
+	const ruleCreateToken = ruleFactoryCreateToken(tokenType, offset);
+
+	return function ruleEndAndCreateToken(t: Tokenizer) {
+		ruleEndToken(t);
+		ruleCreateToken(t);
+	}
+}
+
+function ruleFactoryMutateToken(typeToChange: TokenType, typeToCreate: TokenType) {
+	return function ruleMutateToken(t: Tokenizer) {
+		t.currentToken.type = typeToChange;
+
+		ruleIncAndTrimToken(t);
+
+		updateTokenValue(t.source, t.currentToken);
+		ruleEndToken(t);
+
+		ruleFactoryEndAndReplaceToken(typeToCreate, 1)(t);
+		ruleIncCurly(t);
+	}
+}
+
+function ruleFactoryReplaceToken(tokenType: TokenType, offset = 0) {
+	return function ruleReplaceToken(t: Tokenizer) {
+		t.currentToken = createSingleCharToken(
+			tokenType,
+			t.index + offset,
+			t.line,
+			t.offset + offset
+		);
+	}
+}
+
+function ruleFactoryReplaceTokenAndIncCurly(tokenType: TokenType, offset = 0) {
+	const ruleReplaceToken = ruleFactoryReplaceToken(tokenType, offset);
+
+	return function ruleReplaceTokenAndIncCurly(t: Tokenizer) {
+		ruleReplaceToken(t);
+		ruleIncCurly(t);
+	}
+}
+
+function ruleFactoryEndAndReplaceToken(tokenType: TokenType, offset = 0) {
+	const ruleReplaceToken = ruleFactoryReplaceToken(tokenType, offset);
+
+	return function ruleEndAndReplaceToken(t: Tokenizer) {
+		ruleEndToken(t);
+		ruleReplaceToken(t);
+	}
+}
+
+
+[
+	CHAR_SPACE,
+	CHAR_TAB,
+	CHAR_LF,
+	CHAR_CR,
+].forEach(charCode => {
+	Tokenizer.switch(charCode, TOKEN_SINGLE_QUOTED_STRING, ruleIncToken);
+	Tokenizer.switch(charCode, TOKEN_DOUBLE_QUOTED_STRING, ruleIncToken);
+	Tokenizer.switch(charCode, TOKEN_EXPRESSION, ruleIncToken);
+	Tokenizer.switch(charCode, TOKEN_STRING, ruleEndTokenAndBreakNewLine);
+	Tokenizer.switch(charCode, DEFAULT, ruleBreakNewLine);
+});
+
+Tokenizer.switch(CHAR_TAG_START, TOKEN_SINGLE_QUOTED_STRING, ruleIncToken);
+Tokenizer.switch(CHAR_TAG_START, TOKEN_DOUBLE_QUOTED_STRING, ruleIncToken);
+Tokenizer.switch(CHAR_TAG_START, TOKEN_EXPRESSION, ruleIncToken);
+Tokenizer.switch(CHAR_TAG_START, TOKEN_STRING, ruleFactoryEndAndCreateToken(TOKEN_TAG_OPEN));
+Tokenizer.switch(CHAR_TAG_START, DEFAULT, ruleFactoryCreateToken(TOKEN_TAG_OPEN));
+
+Tokenizer.switch(CHAR_EQUALITY_SYMBOL, TOKEN_SINGLE_QUOTED_STRING, ruleIncToken);
+Tokenizer.switch(CHAR_EQUALITY_SYMBOL, TOKEN_DOUBLE_QUOTED_STRING, ruleIncToken);
+Tokenizer.switch(CHAR_EQUALITY_SYMBOL, TOKEN_EXPRESSION, ruleIncToken);
+Tokenizer.switch(CHAR_EQUALITY_SYMBOL, TOKEN_STRING, ruleFactoryEndAndCreateToken(TOKEN_ASSIGN));
+Tokenizer.switch(CHAR_EQUALITY_SYMBOL, DEFAULT, ruleFactoryCreateToken(TOKEN_ASSIGN));
+
+Tokenizer.switch(CHAR_SINGLE_QUOTE, TOKEN_SINGLE_QUOTED_STRING, ruleEndToken);
+Tokenizer.switch(CHAR_SINGLE_QUOTE, TOKEN_SINGLE_QUOTED_STRING_END, ruleIncTrimAndEndToken);
+Tokenizer.switch(CHAR_SINGLE_QUOTE, TOKEN_DOUBLE_QUOTED_STRING, ruleIncToken);
+Tokenizer.switch(CHAR_SINGLE_QUOTE, TOKEN_DOUBLE_QUOTED_STRING_END, ruleIncToken);
+Tokenizer.switch(CHAR_SINGLE_QUOTE, TOKEN_EXPRESSION, ruleIncToken);
+Tokenizer.switch(CHAR_SINGLE_QUOTE, DEFAULT, ruleFactoryEndAndReplaceToken(TOKEN_SINGLE_QUOTED_STRING, 1));
+
+Tokenizer.switch(CHAR_DOUBLE_QUOTE, TOKEN_SINGLE_QUOTED_STRING, ruleIncToken);
+Tokenizer.switch(CHAR_DOUBLE_QUOTE, TOKEN_SINGLE_QUOTED_STRING_END, ruleIncToken);
+Tokenizer.switch(CHAR_DOUBLE_QUOTE, TOKEN_DOUBLE_QUOTED_STRING, ruleEndToken);
+Tokenizer.switch(CHAR_DOUBLE_QUOTE, TOKEN_DOUBLE_QUOTED_STRING_END, ruleIncTrimAndEndToken);
+Tokenizer.switch(CHAR_DOUBLE_QUOTE, TOKEN_EXPRESSION, ruleIncToken);
+Tokenizer.switch(CHAR_DOUBLE_QUOTE, DEFAULT, ruleFactoryEndAndReplaceToken(TOKEN_DOUBLE_QUOTED_STRING, 1));
+
+Tokenizer.switch(CHAR_FORWARD_SLASH, TOKEN_SINGLE_QUOTED_STRING, ruleIncToken);
+Tokenizer.switch(CHAR_FORWARD_SLASH, TOKEN_DOUBLE_QUOTED_STRING, ruleIncToken);
+Tokenizer.switch(CHAR_FORWARD_SLASH, TOKEN_EXPRESSION, ruleIncToken);
+Tokenizer.switch(CHAR_FORWARD_SLASH, TOKEN_STRING, ruleFactoryEndAndCreateToken(TOKEN_FORWARD_SLASH));
+Tokenizer.switch(CHAR_FORWARD_SLASH, DEFAULT, ruleFactoryCreateToken(TOKEN_FORWARD_SLASH));
+
+Tokenizer.switch(CHAR_TAG_END, TOKEN_SINGLE_QUOTED_STRING, ruleIncToken);
+Tokenizer.switch(CHAR_TAG_END, TOKEN_DOUBLE_QUOTED_STRING, ruleIncToken);
+Tokenizer.switch(CHAR_TAG_END, TOKEN_EXPRESSION, ruleIncToken);
+Tokenizer.switch(CHAR_TAG_END, TOKEN_STRING, ruleFactoryEndAndCreateToken(TOKEN_TAG_CLOSE));
+Tokenizer.switch(CHAR_TAG_END, DEFAULT, ruleFactoryCreateToken(TOKEN_TAG_CLOSE));
+
+Tokenizer.switch(CHAR_OPEN_CURLY, TOKEN_EXPRESSION, ruleIncTokenAndCurly);
+Tokenizer.switch(CHAR_OPEN_CURLY, DEFAULT, ruleFactoryReplaceTokenAndIncCurly(TOKEN_EXPRESSION, 1));
+
+Tokenizer.switch(CHAR_OPEN_CURLY, TOKEN_SINGLE_QUOTED_STRING, ruleFactoryMutateToken(
+	TOKEN_SINGLE_QUOTED_STRING_START, TOKEN_EXPRESSION));
+
+Tokenizer.switch(CHAR_OPEN_CURLY, TOKEN_SINGLE_QUOTED_STRING_END, ruleFactoryMutateToken(
+	TOKEN_SINGLE_QUOTED_STRING_MIDDLE, TOKEN_EXPRESSION));
+
+Tokenizer.switch(CHAR_OPEN_CURLY, TOKEN_DOUBLE_QUOTED_STRING, ruleFactoryMutateToken(
+	TOKEN_DOUBLE_QUOTED_STRING_START, TOKEN_EXPRESSION));
+
+Tokenizer.switch(CHAR_OPEN_CURLY, TOKEN_DOUBLE_QUOTED_STRING_END, ruleFactoryMutateToken(
+	TOKEN_DOUBLE_QUOTED_STRING_MIDDLE, TOKEN_EXPRESSION));
+
+Tokenizer.switch(CHAR_CLOSE_CURLY, DEFAULT, ruleIncToken);
+
+Tokenizer.switch(CHAR_CLOSE_CURLY, TOKEN_EXPRESSION, t => {
+	ruleDecCurly(t);
+
+	if (t.curlyBrackets) {
+		ruleIncToken(t);
+		return;
+	}
+
+	const lastToken = t.tokenList[t.tokenList.length - 1];
+	ruleEndToken(t);
+
+	if (!lastToken) {
+		return
+	}
+
+	switch (lastToken.type) {
+		case TOKEN_SINGLE_QUOTED_STRING_MIDDLE:
+		{
+			lastToken.end.index++;
+			lastToken.end.offset++;
+
+			updateTokenValue(t.source, lastToken);
+			// No break
+		}
+
+		case TOKEN_SINGLE_QUOTED_STRING_START:
+		{
+			ruleFactoryReplaceToken(TOKEN_SINGLE_QUOTED_STRING_END, 1)(t);
+			break;
+		}
+
+		case TOKEN_DOUBLE_QUOTED_STRING_MIDDLE:
+		{
+			lastToken.end.index++;
+			lastToken.end.offset++;
+
+			updateTokenValue(t.source, lastToken);
+			// No break
+		}
+
+		case TOKEN_DOUBLE_QUOTED_STRING_START:
+		{
+			ruleFactoryReplaceToken(TOKEN_DOUBLE_QUOTED_STRING_END, 1)(t);
+			break;
+		}
+	}
+});
+
+Tokenizer.switch(DEFAULT, DEFAULT, t => {
+	if (t.currentToken === undefined) {
+		ruleFactoryReplaceToken(TOKEN_STRING)(t);
+		return;
+	}
+
+	ruleIncToken(t);
+});
+
+
 export function tokenize(source: string, options: ITokenizerOptions = {}): IToken[] {
-	const tokenList: IToken[] = [];
-	let currentToken: IToken;
-
-	const lineDelimiterMatcher = new LineDelimiterMatcher(options.lineDelimiter);
-
-	let i = 0;
-	let line = 1;
-	let offset = 1;
+	const tokenizer = new Tokenizer(
+		source,
+		new LineDelimiterMatcher(options.lineDelimiter),
+	);
 
 	let charCode;
 	let tokenType;
-	let curlyBrackets = 0;
-
 	do {
-		charCode = source.charCodeAt(i);
-		tokenType = currentToken && currentToken.type;
-
-		switch (charCode)
-		{
-			case 0x20: // Space
-			case 0x9: // Tab
-			case 0xA: // LF
-			case 0xD: // CR
-			{
-				switch (tokenType)
-				{
-					case TOKEN_SINGLE_QUOTED_STRING:
-					case TOKEN_DOUBLE_QUOTED_STRING:
-					case TOKEN_EXPRESSION:
-					{
-						currentToken.end.index = i;
-						currentToken.end.line = line;
-						currentToken.end.offset = offset;
-
-						break;
-					}
-
-					case TOKEN_STRING:
-					{
-						currentToken = endToken(source, currentToken, tokenList);
-						// No break
-					}
-
-					default:
-					{
-						if (charCode === 0xA || charCode === 0xD) {
-							lineDelimiterMatcher.push(source.substring(i, i + 1));
-
-							if (lineDelimiterMatcher.matches()) {
-								lineDelimiterMatcher.clear();
-								offset = 1;
-								line++;
-							}
-						}
-					}
-				}
-
-				break;
-			}
-
-			case 0x3C: // <
-			{
-				switch (tokenType)
-				{
-					case TOKEN_SINGLE_QUOTED_STRING:
-					case TOKEN_DOUBLE_QUOTED_STRING:
-					case TOKEN_EXPRESSION:
-					{
-						currentToken.end.index = i;
-						currentToken.end.line = line;
-						currentToken.end.offset = offset;
-
-						break;
-					}
-
-					case TOKEN_STRING:
-					{
-						currentToken = endToken(source, currentToken, tokenList);
-						// No break
-					}
-
-					default:
-					{
-						currentToken = createSingleCharToken(TOKEN_TAG_OPEN, i, line, offset);
-						tokenList.push(currentToken);
-						currentToken = undefined;
-
-						break;
-					}
-				}
-
-				break;
-			}
-
-			case 0x3D: // =
-			{
-				switch (tokenType)
-				{
-					case TOKEN_SINGLE_QUOTED_STRING:
-					case TOKEN_DOUBLE_QUOTED_STRING:
-					case TOKEN_EXPRESSION:
-					{
-						currentToken.end.index = i;
-						currentToken.end.line = line;
-						currentToken.end.offset = offset;
-
-						break;
-					}
-
-					case TOKEN_STRING:
-					{
-						currentToken = endToken(source, currentToken, tokenList);
-						// No break
-					}
-
-					default:
-					{
-						currentToken = createSingleCharToken(TOKEN_ASSIGN, i, line, offset);
-						tokenList.push(currentToken);
-						currentToken = undefined;
-
-						break;
-					}
-				}
-
-				break;
-			}
-
-			case 0x27: // '
-			{
-				switch (tokenType) {
-					case TOKEN_SINGLE_QUOTED_STRING:
-					{
-						currentToken = endToken(source, currentToken, tokenList);
-						break;
-					}
-
-					case TOKEN_SINGLE_QUOTED_STRING_END:
-					{
-						currentToken.end = {
-							index: i - 1,
-							line,
-							offset: offset - 1,
-						};
-
-						currentToken = endToken(source, currentToken, tokenList);
-						break;
-					}
-
-					case TOKEN_DOUBLE_QUOTED_STRING:
-					case TOKEN_DOUBLE_QUOTED_STRING_END:
-					case TOKEN_EXPRESSION:
-					{
-						currentToken.end.index = i;
-						currentToken.end.line = line;
-						currentToken.end.offset = offset;
-						break;
-					}
-
-					default:
-					{
-						if (currentToken) {
-							currentToken = endToken(source, currentToken, tokenList);
-						}
-
-						currentToken = createSingleCharToken(
-							TOKEN_SINGLE_QUOTED_STRING,
-							i + 1,
-							line,
-							offset + 1
-						);
-
-						break;
-					}
-				}
-
-				break;
-			}
-
-			case 0x22: // "
-			{
-				switch (tokenType) {
-					case TOKEN_SINGLE_QUOTED_STRING:
-					case TOKEN_SINGLE_QUOTED_STRING_END:
-					case TOKEN_EXPRESSION:
-					{
-						currentToken.end.index = i;
-						currentToken.end.line = line;
-						currentToken.end.offset = offset;
-						break;
-					}
-
-					case TOKEN_DOUBLE_QUOTED_STRING:
-					{
-						currentToken = endToken(source, currentToken, tokenList);
-						break;
-					}
-
-					case TOKEN_DOUBLE_QUOTED_STRING_END:
-					{
-						currentToken.end = {
-							index: i - 1,
-							line,
-							offset: offset - 1,
-						};
-
-						currentToken = endToken(source, currentToken, tokenList);
-						break;
-					}
-
-					default:
-					{
-						if (currentToken) {
-							currentToken = endToken(source, currentToken, tokenList);
-						}
-
-						currentToken = createSingleCharToken(
-							TOKEN_DOUBLE_QUOTED_STRING,
-							i + 1,
-							line,
-							offset + 1
-						);
-
-						break;
-					}
-				}
-
-				break;
-			}
-
-			case 0x7B: // {
-			{
-				switch (tokenType) {
-					case TOKEN_EXPRESSION:
-					{
-						currentToken.end.index = i;
-						currentToken.end.line = line;
-						currentToken.end.offset = offset;
-
-						curlyBrackets++;
-						break;
-					}
-
-					case TOKEN_SINGLE_QUOTED_STRING:
-					{
-						//currentToken.end.index--;
-						//currentToken.end.offset--;
-						currentToken.type = TOKEN_SINGLE_QUOTED_STRING_START;
-						currentToken.end = {
-							index: i - 1,
-							line,
-							offset: offset - 1,
-						};
-
-						updateTokenValue(source, currentToken);
-						currentToken = endToken(source, currentToken, tokenList);
-
-						currentToken = createSingleCharToken(
-							TOKEN_EXPRESSION,
-							i + 1,
-							line,
-							offset + 1
-						);
-
-						curlyBrackets++;
-
-						break;
-					}
-
-					case TOKEN_SINGLE_QUOTED_STRING_END:
-					{
-						//currentToken.start.index--;
-						//currentToken.start.offset--;
-						currentToken.type = TOKEN_SINGLE_QUOTED_STRING_MIDDLE;
-						currentToken.end = {
-							index: i - 1,
-							line,
-							offset: offset - 1,
-						};
-
-						updateTokenValue(source, currentToken);
-						currentToken = endToken(source, currentToken, tokenList);
-
-						currentToken = createSingleCharToken(
-							TOKEN_EXPRESSION,
-							i + 1,
-							line,
-							offset + 1
-						);
-
-						curlyBrackets++;
-
-						break;
-					}
-
-					case TOKEN_DOUBLE_QUOTED_STRING:
-					{
-						//currentToken.end.index--;
-						//currentToken.end.offset--;
-						currentToken.type = TOKEN_DOUBLE_QUOTED_STRING_START;
-						currentToken.end = {
-							index: i - 1,
-							line,
-							offset: offset - 1,
-						};
-
-						updateTokenValue(source, currentToken);
-						currentToken = endToken(source, currentToken, tokenList);
-
-						currentToken = createSingleCharToken(
-							TOKEN_EXPRESSION,
-							i + 1,
-							line,
-							offset + 1
-						);
-
-						curlyBrackets++;
-
-						break;
-					}
-
-					case TOKEN_DOUBLE_QUOTED_STRING_END:
-					{
-						//currentToken.end.index--;
-						//currentToken.end.offset--;
-						currentToken.type = TOKEN_DOUBLE_QUOTED_STRING_MIDDLE;
-						currentToken.end = {
-							index: i - 1,
-							line,
-							offset: offset - 1,
-						};
-
-						updateTokenValue(source, currentToken);
-						currentToken = endToken(source, currentToken, tokenList);
-
-						currentToken = createSingleCharToken(
-							TOKEN_EXPRESSION,
-							i + 1,
-							line,
-							offset + 1
-						);
-
-						curlyBrackets++;
-
-						break;
-					}
-
-					default:
-					{
-						currentToken = createSingleCharToken(
-							TOKEN_EXPRESSION,
-							i + 1,
-							line,
-							offset + 1
-						);
-
-						curlyBrackets++;
-						break;
-					}
-				}
-
-				break;
-			}
-
-			case 0x7D: // }
-			{
-				switch (tokenType) {
-					case TOKEN_EXPRESSION:
-					{
-						curlyBrackets--;
-
-						if (curlyBrackets === 0) {
-							const lastToken = tokenList[tokenList.length - 1];
-							currentToken = endToken(source, currentToken, tokenList);
-
-							if (!lastToken) {
-								break;
-							}
-
-							switch (lastToken.type) {
-								case TOKEN_SINGLE_QUOTED_STRING_MIDDLE:
-								{
-									lastToken.end.index++;
-									lastToken.end.offset++;
-
-									updateTokenValue(source, lastToken);
-									// No break
-								}
-
-								case TOKEN_SINGLE_QUOTED_STRING_START:
-								{
-									currentToken = createSingleCharToken(
-										TOKEN_SINGLE_QUOTED_STRING_END,
-										i + 1,
-										line,
-										offset + 1,
-									);
-
-									break;
-								}
-
-								case TOKEN_DOUBLE_QUOTED_STRING_MIDDLE:
-								{
-									lastToken.end.index++;
-									lastToken.end.offset++;
-
-									updateTokenValue(source, lastToken);
-									// No break
-								}
-
-								case TOKEN_DOUBLE_QUOTED_STRING_START:
-								{
-									currentToken = createSingleCharToken(
-										TOKEN_DOUBLE_QUOTED_STRING_END,
-										i + 1,
-										line,
-										offset + 1,
-									);
-
-									break;
-								}
-							}
-						} else {
-							currentToken.end.index = i;
-							currentToken.end.line = line;
-							currentToken.end.offset = offset;
-						}
-
-						break;
-					}
-
-					default:
-					{
-						currentToken.end.index = i;
-						currentToken.end.line = line;
-						currentToken.end.offset = offset;
-
-						break;
-					}
-				}
-
-				break;
-			}
-
-			case 0x2F: // /
-			{
-				switch (tokenType)
-				{
-					case TOKEN_SINGLE_QUOTED_STRING:
-					case TOKEN_DOUBLE_QUOTED_STRING:
-					case TOKEN_EXPRESSION:
-					{
-						currentToken.end.index = i;
-						currentToken.end.line = line;
-						currentToken.end.offset = offset;
-
-						break;
-					}
-
-					case TOKEN_STRING:
-					{
-						currentToken = endToken(source, currentToken, tokenList);
-						// No break
-					}
-
-					default:
-					{
-						currentToken = createSingleCharToken(TOKEN_FORWARD_SLASH, i, line, offset);
-						tokenList.push(currentToken);
-						currentToken = undefined;
-
-						break;
-					}
-				}
-
-				break;
-			}
-
-			case 0x3E: // >
-			{
-				switch (tokenType)
-				{
-					case TOKEN_SINGLE_QUOTED_STRING:
-					case TOKEN_DOUBLE_QUOTED_STRING:
-					case TOKEN_EXPRESSION:
-					{
-						currentToken.end.index = i;
-						currentToken.end.line = line;
-						currentToken.end.offset = offset;
-
-						break;
-					}
-
-					case TOKEN_STRING:
-					{
-						currentToken = endToken(source, currentToken, tokenList);
-						// No break
-					}
-
-					default:
-					{
-						currentToken = createSingleCharToken(TOKEN_TAG_CLOSE, i, line, offset);
-						tokenList.push(currentToken);
-						currentToken = undefined;
-
-						break;
-					}
-				}
-
-				break;
-			}
-
-			default:
-			{
-				if (currentToken === undefined) {
-					currentToken = createSingleCharToken(TOKEN_STRING, i, line, offset);
-
-					break;
-				}
-
-				currentToken.end.index = i;
-				currentToken.end.line = line;
-				currentToken.end.offset = offset;
-
-				break;
-			}
-		}
-
-		i++;
+		charCode = source.charCodeAt(tokenizer.index);
+		tokenType = tokenizer.currentToken && tokenizer.currentToken.type;
+
+		tokenizer.consume(charCode, <TokenType> tokenType);
+		tokenizer.index++;
 
 		if (charCode !== 0xA && charCode !== 0xD) {
-			offset++;
+			tokenizer.offset++;
 		}
-	} while (i < source.length);
+	} while (tokenizer.index < source.length);
 
 	// Ending the last token
-	if (currentToken && currentToken.type === TOKEN_STRING) {
-		endToken(source, currentToken, tokenList);
+	if (tokenizer.currentToken && tokenizer.currentToken.type === TOKEN_STRING) {
+		ruleEndToken(tokenizer);
 	}
 
-	return tokenList;
+	return tokenizer.tokenList;
 }
