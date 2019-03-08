@@ -1,3 +1,3 @@
 export {
 	parse,
-} from "./parser/rules";
+} from "./parser";
