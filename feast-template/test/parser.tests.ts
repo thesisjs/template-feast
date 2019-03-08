@@ -8,9 +8,14 @@ import {
 	NODE_ATTRIBUTE,
 	NODE_ATTRIBUTE_NAME,
 	NODE_ATTRIBUTE_VALUE,
+	NODE_ATTRIBUTE_TEMPLATE_VALUE,
+	NODE_EXPRESSION,
 } from "../src/parser/types";
 
-import {TOKEN_STRING} from "../src/tokenizer/types";
+import {
+	TOKEN_STRING,
+	TOKEN_EXPRESSION,
+} from "../src/tokenizer/types";
 
 
 describe('AST source maps', () => {
@@ -272,6 +277,49 @@ describe('AST tags', () => {
 										type: TOKEN_STRING,
 										value: 'alert()',
 									},
+								},
+							],
+						},
+					],
+				},
+			],
+		});
+	});
+
+	test('one self-closing, one attribute with an expression value', () => {
+		expect(
+			parse('<button onclick={alert()}/>'),
+		).toMatchObject({
+			type: NODE_TEMPLATE,
+			children: [
+				{
+					type: NODE_TAG,
+					value: {
+						type: TOKEN_STRING,
+						value: 'button',
+					},
+					children: [
+						{
+							type: NODE_ATTRIBUTE,
+							children: [
+								{
+									type: NODE_ATTRIBUTE_NAME,
+									value: {
+										type: TOKEN_STRING,
+										value: 'onclick',
+									},
+								},
+								{
+									type: NODE_ATTRIBUTE_TEMPLATE_VALUE,
+									children: [
+										{
+											type: NODE_EXPRESSION,
+											value: {
+												type: TOKEN_EXPRESSION,
+												value: 'alert()',
+											},
+										}
+									],
 								},
 							],
 						},

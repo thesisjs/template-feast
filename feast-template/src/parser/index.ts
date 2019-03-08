@@ -7,8 +7,10 @@ import {
 import {
 	TOKEN_ASSIGN,
 	TOKEN_FORWARD_SLASH,
-	TOKEN_STRING, TOKEN_TAG_CLOSE,
-	TOKEN_TAG_OPEN
+	TOKEN_STRING,
+	TOKEN_TAG_CLOSE,
+	TOKEN_TAG_OPEN,
+	TOKEN_EXPRESSION,
 } from "../tokenizer/types";
 
 import {
@@ -22,7 +24,7 @@ import {
 	STATE_TAG_ATTRIBUTE_NAME,
 	STATE_TAG_ATTRIBUTE_ASSIGN,
 	STATE_TAG_ATTRIBUTE_VALUE,
-	STATE_TAG_CLOSING,
+	STATE_TAG_CLOSING, NODE_ATTRIBUTE_TEMPLATE_VALUE, NODE_EXPRESSION,
 } from "./types";
 
 import {
@@ -73,6 +75,30 @@ Parser.switch(TOKEN_STRING, STATE_TAG_ATTRIBUTE_VALUE, (parser, token) => {
 		value: token,
 	});
 
+	// Restoring attribute node
+	parser.bake(NODE_ATTRIBUTE);
+	// Restoring tag node
+	parser.bake(NODE_TAG);
+});
+
+Parser.switch(TOKEN_EXPRESSION, STATE_TAG_ATTRIBUTE_VALUE, (parser, token) => {
+	parser.setState(STATE_TAG_ATTRIBUTE_NAME);
+
+	parser.push({
+		type: NODE_ATTRIBUTE_TEMPLATE_VALUE,
+		start: token.start,
+		end: token.end,
+	});
+
+	parser.push({
+		type: NODE_EXPRESSION,
+		start: token.start,
+		end: token.end,
+		value: token,
+	});
+
+	// Restoring attribute value node
+	parser.bake(NODE_ATTRIBUTE_TEMPLATE_VALUE);
 	// Restoring attribute node
 	parser.bake(NODE_ATTRIBUTE);
 	// Restoring tag node

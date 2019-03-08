@@ -5,13 +5,17 @@ export const NODE_ERROR = 'feast::error';
 export const NODE_ATTRIBUTE = 'feast::attribute';
 export const NODE_ATTRIBUTE_NAME = 'feast::attribute-name';
 export const NODE_ATTRIBUTE_VALUE = 'feast::attribute-value';
+export const NODE_ATTRIBUTE_TEMPLATE_VALUE = 'feast::attribute-template-value';
+export const NODE_EXPRESSION = 'feast::expression';
 
 export type ASTNodeType = typeof NODE_TEMPLATE
 	| typeof NODE_TAG
 	| typeof NODE_ERROR
 	| typeof NODE_ATTRIBUTE
 	| typeof NODE_ATTRIBUTE_NAME
-	| typeof NODE_ATTRIBUTE_VALUE;
+	| typeof NODE_ATTRIBUTE_VALUE
+	| typeof NODE_ATTRIBUTE_TEMPLATE_VALUE
+	| typeof NODE_EXPRESSION;
 
 export const STATE_INITIAL = 0;
 export const STATE_TAG_OPEN = 1;
