@@ -1,5 +1,8 @@
 import {
 	tokenize,
+} from "../src/tokenizer";
+
+import {
 	TOKEN_TAG_OPEN,
 	TOKEN_STRING,
 	TOKEN_SINGLE_QUOTED_STRING,
@@ -14,7 +17,7 @@ import {
 	TOKEN_FORWARD_SLASH,
 	TOKEN_TAG_CLOSE,
 	TOKEN_ASSIGN,
-} from "../src/tokenizer";
+} from "../src/tokenizer/types";
 
 
 describe('tokenizer tokens', () => {

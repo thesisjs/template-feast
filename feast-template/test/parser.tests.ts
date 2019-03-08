@@ -1,20 +1,23 @@
 import {
-	parseFeastTemplate,
+	parse,
+} from "../src/parser";
+
+import {
 	NODE_TAG,
 	NODE_TEMPLATE,
 	NODE_ATTRIBUTE,
 	NODE_ATTRIBUTE_NAME,
 	NODE_ATTRIBUTE_VALUE,
-} from "../src/parser";
+} from "../src/parser/types";
 
-import {TOKEN_STRING} from "../src/tokenizer";
+import {TOKEN_STRING} from "../src/tokenizer/types";
 
 
 describe('AST source maps', () => {
 
 	test('no spaces, no line breaks', () => {
 		expect(
-			parseFeastTemplate('<button/>'),
+			parse('<button/>'),
 		).toMatchObject({
 			type: 'feast::template',
 			children: [
@@ -50,7 +53,7 @@ describe('AST source maps', () => {
 
 	test('spaces, no line breaks', () => {
 		expect(
-			parseFeastTemplate('  <  button / >   '),
+			parse('  <  button / >   '),
 		).toMatchObject({
 			type: 'feast::template',
 			children: [
@@ -86,7 +89,7 @@ describe('AST source maps', () => {
 
 	test('sapces, line breaks', () => {
 		expect(
-			parseFeastTemplate('  \n\t\t<  button\n\n\t\t />   ', {lineDelimiter: '\n'}),
+			parse('  \n\t\t<  button\n\n\t\t />   ', {lineDelimiter: '\n'}),
 		).toMatchObject({
 			type: 'feast::template',
 			children: [
@@ -127,7 +130,7 @@ describe('AST tags', () => {
 
 	test('one self-closing, no attributes', () => {
 		expect(
-			parseFeastTemplate('<button/>'),
+			parse('<button/>'),
 		).toMatchObject({
 			type: NODE_TEMPLATE,
 			children: [
@@ -144,7 +147,7 @@ describe('AST tags', () => {
 
 	test('two self-closing, no attributes', () => {
 		expect(
-			parseFeastTemplate('<button/><i/>'),
+			parse('<button/><i/>'),
 		).toMatchObject({
 			type: NODE_TEMPLATE,
 			children: [
@@ -168,7 +171,7 @@ describe('AST tags', () => {
 
 	test('one self-closing, one attribute without a value', () => {
 		expect(
-			parseFeastTemplate('<button disabled/>'),
+			parse('<button disabled/>'),
 		).toMatchObject({
 			type: NODE_TEMPLATE,
 			children: [
@@ -199,7 +202,7 @@ describe('AST tags', () => {
 
 	test('one self-closing, two attributes without a value', () => {
 		expect(
-			parseFeastTemplate('<button 1 data-id/>'),
+			parse('<button 1 data-id/>'),
 		).toMatchObject({
 			type: NODE_TEMPLATE,
 			children: [
@@ -242,7 +245,7 @@ describe('AST tags', () => {
 
 	test('one self-closing, one attribute with a value', () => {
 		expect(
-			parseFeastTemplate('<button onclick=alert()/>'),
+			parse('<button onclick=alert()/>'),
 		).toMatchObject({
 			type: NODE_TEMPLATE,
 			children: [
