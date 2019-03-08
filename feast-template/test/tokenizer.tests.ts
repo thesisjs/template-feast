@@ -266,7 +266,7 @@ describe('tokenizer tags', () => {
 		).toMatchObject([
 			{type: TOKEN_TAG_OPEN},
 			{type: TOKEN_STRING, value: 'button'},
-			{type: TOKEN_STRING, value: 'onclick'},
+			{type: TOKEN_STRING, value: 'title'},
 			{type: TOKEN_ASSIGN},
 			{type: TOKEN_SINGLE_QUOTED_STRING, value: '🦊 click me! 🦊'},
 			{type: TOKEN_FORWARD_SLASH},

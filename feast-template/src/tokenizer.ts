@@ -134,6 +134,15 @@ export function tokenize(source: string, options: ITokenizerOptions = {}): IToke
 			{
 				switch (tokenType)
 				{
+					case TOKEN_SINGLE_QUOTED_STRING:
+					{
+						currentToken.end.index = i;
+						currentToken.end.line = line;
+						currentToken.end.offset = offset;
+
+						break;
+					}
+
 					case TOKEN_STRING:
 					{
 						currentToken = endToken(source, currentToken, tokenList);
@@ -161,6 +170,15 @@ export function tokenize(source: string, options: ITokenizerOptions = {}): IToke
 			{
 				switch (tokenType)
 				{
+					case TOKEN_SINGLE_QUOTED_STRING:
+					{
+						currentToken.end.index = i;
+						currentToken.end.line = line;
+						currentToken.end.offset = offset;
+
+						break;
+					}
+
 					case TOKEN_STRING:
 					{
 						currentToken = endToken(source, currentToken, tokenList);
@@ -184,6 +202,15 @@ export function tokenize(source: string, options: ITokenizerOptions = {}): IToke
 			{
 				switch (tokenType)
 				{
+					case TOKEN_SINGLE_QUOTED_STRING:
+					{
+						currentToken.end.index = i;
+						currentToken.end.line = line;
+						currentToken.end.offset = offset;
+
+						break;
+					}
+
 					case TOKEN_STRING:
 					{
 						currentToken = endToken(source, currentToken, tokenList);
@@ -205,6 +232,31 @@ export function tokenize(source: string, options: ITokenizerOptions = {}): IToke
 
 			case 0x27: // '
 			{
+				switch (tokenType) {
+					case TOKEN_SINGLE_QUOTED_STRING:
+					{
+						currentToken = endToken(source, currentToken, tokenList);
+
+						break;
+					}
+
+					default:
+					{
+						if (currentToken) {
+							currentToken = endToken(source, currentToken, tokenList);
+						}
+
+						currentToken = createSingleCharToken(
+							TOKEN_SINGLE_QUOTED_STRING,
+							i + 1,
+							line,
+							offset + 1
+						);
+
+						break;
+					}
+				}
+
 				break;
 			}
 
@@ -212,6 +264,15 @@ export function tokenize(source: string, options: ITokenizerOptions = {}): IToke
 			{
 				switch (tokenType)
 				{
+					case TOKEN_SINGLE_QUOTED_STRING:
+					{
+						currentToken.end.index = i;
+						currentToken.end.line = line;
+						currentToken.end.offset = offset;
+
+						break;
+					}
+
 					case TOKEN_STRING:
 					{
 						currentToken = endToken(source, currentToken, tokenList);
@@ -235,6 +296,15 @@ export function tokenize(source: string, options: ITokenizerOptions = {}): IToke
 			{
 				switch (tokenType)
 				{
+					case TOKEN_SINGLE_QUOTED_STRING:
+					{
+						currentToken.end.index = i;
+						currentToken.end.line = line;
+						currentToken.end.offset = offset;
+
+						break;
+					}
+
 					case TOKEN_STRING:
 					{
 						currentToken = endToken(source, currentToken, tokenList);
