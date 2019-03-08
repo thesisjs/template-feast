@@ -4,6 +4,12 @@ export const TOKEN_STRING = 'token::string';
 export const TOKEN_SINGLE_QUOTED_STRING = 'token::single-quoted-string';
 export const TOKEN_DOUBLE_QUOTED_STRING = 'token::double-quoted-string';
 export const TOKEN_EXPRESSION = 'token::expression';
+export const TOKEN_SINGLE_QUOTED_STRING_START = 'token::single-quoted-string-start';
+export const TOKEN_SINGLE_QUOTED_STRING_MIDDLE = 'token::single-quoted-string-middle';
+export const TOKEN_SINGLE_QUOTED_STRING_END = 'token::single-quoted-string-end';
+export const TOKEN_DOUBLE_QUOTED_STRING_START = 'token::double-quoted-string-start';
+export const TOKEN_DOUBLE_QUOTED_STRING_MIDDLE = 'token::double-quoted-string-middle';
+export const TOKEN_DOUBLE_QUOTED_STRING_END = 'token::double-quoted-string-end';
 export const TOKEN_FORWARD_SLASH = 'token::forward-slash';
 export const TOKEN_ASSIGN = 'token::assign';
 export const TOKEN_TAG_CLOSE = 'token::tag-close';
@@ -14,6 +20,12 @@ export type TokenType = typeof TOKEN_TAG_OPEN |
 	typeof TOKEN_SINGLE_QUOTED_STRING |
 	typeof TOKEN_DOUBLE_QUOTED_STRING |
 	typeof TOKEN_EXPRESSION |
+	typeof TOKEN_SINGLE_QUOTED_STRING_START |
+	typeof TOKEN_SINGLE_QUOTED_STRING_MIDDLE |
+	typeof TOKEN_SINGLE_QUOTED_STRING_END |
+	typeof TOKEN_DOUBLE_QUOTED_STRING_START |
+	typeof TOKEN_DOUBLE_QUOTED_STRING_MIDDLE |
+	typeof TOKEN_DOUBLE_QUOTED_STRING_END |
 	typeof TOKEN_ASSIGN |
 	typeof TOKEN_FORWARD_SLASH;
 
@@ -247,11 +259,19 @@ export function tokenize(source: string, options: ITokenizerOptions = {}): IToke
 					case TOKEN_SINGLE_QUOTED_STRING:
 					{
 						currentToken = endToken(source, currentToken, tokenList);
+						break;
+					}
 
+					case TOKEN_SINGLE_QUOTED_STRING_END:
+					{
+						currentToken.end.index--;
+						currentToken.end.offset--;
+						currentToken = endToken(source, currentToken, tokenList);
 						break;
 					}
 
 					case TOKEN_DOUBLE_QUOTED_STRING:
+					case TOKEN_DOUBLE_QUOTED_STRING_END:
 					case TOKEN_EXPRESSION:
 					{
 						currentToken.end.index = i;
@@ -284,6 +304,7 @@ export function tokenize(source: string, options: ITokenizerOptions = {}): IToke
 			{
 				switch (tokenType) {
 					case TOKEN_SINGLE_QUOTED_STRING:
+					case TOKEN_SINGLE_QUOTED_STRING_END:
 					case TOKEN_EXPRESSION:
 					{
 						currentToken.end.index = i;
@@ -295,7 +316,14 @@ export function tokenize(source: string, options: ITokenizerOptions = {}): IToke
 					case TOKEN_DOUBLE_QUOTED_STRING:
 					{
 						currentToken = endToken(source, currentToken, tokenList);
+						break;
+					}
 
+					case TOKEN_DOUBLE_QUOTED_STRING_END:
+					{
+						currentToken.end.index--;
+						currentToken.end.offset--;
+						currentToken = endToken(source, currentToken, tokenList);
 						break;
 					}
 
@@ -332,12 +360,84 @@ export function tokenize(source: string, options: ITokenizerOptions = {}): IToke
 						break;
 					}
 
+					case TOKEN_SINGLE_QUOTED_STRING:
+					{
+						currentToken.end.index--;
+						currentToken.end.offset--;
+						currentToken.type = TOKEN_SINGLE_QUOTED_STRING_START;
+						currentToken = endToken(source, currentToken, tokenList);
+
+						currentToken = createSingleCharToken(
+							TOKEN_EXPRESSION,
+							i + 1,
+							line,
+							offset + 1
+						);
+
+						curlyBrackets++;
+
+						break;
+					}
+
+					case TOKEN_SINGLE_QUOTED_STRING_END:
+					{
+						currentToken.end.index--;
+						currentToken.end.offset--;
+						currentToken.type = TOKEN_SINGLE_QUOTED_STRING_MIDDLE;
+						currentToken = endToken(source, currentToken, tokenList);
+
+						currentToken = createSingleCharToken(
+							TOKEN_EXPRESSION,
+							i + 1,
+							line,
+							offset + 1
+						);
+
+						curlyBrackets++;
+
+						break;
+					}
+
+					case TOKEN_DOUBLE_QUOTED_STRING:
+					{
+						currentToken.end.index--;
+						currentToken.end.offset--;
+						currentToken.type = TOKEN_DOUBLE_QUOTED_STRING_START;
+						currentToken = endToken(source, currentToken, tokenList);
+
+						currentToken = createSingleCharToken(
+							TOKEN_EXPRESSION,
+							i + 1,
+							line,
+							offset + 1
+						);
+
+						curlyBrackets++;
+
+						break;
+					}
+
+					case TOKEN_DOUBLE_QUOTED_STRING_END:
+					{
+						currentToken.end.index--;
+						currentToken.end.offset--;
+						currentToken.type = TOKEN_DOUBLE_QUOTED_STRING_MIDDLE;
+						currentToken = endToken(source, currentToken, tokenList);
+
+						currentToken = createSingleCharToken(
+							TOKEN_EXPRESSION,
+							i + 1,
+							line,
+							offset + 1
+						);
+
+						curlyBrackets++;
+
+						break;
+					}
+
 					default:
 					{
-						if (currentToken) {
-							currentToken = endToken(source, currentToken, tokenList);
-						}
-
 						currentToken = createSingleCharToken(
 							TOKEN_EXPRESSION,
 							i + 1,
@@ -361,7 +461,40 @@ export function tokenize(source: string, options: ITokenizerOptions = {}): IToke
 						curlyBrackets--;
 
 						if (curlyBrackets === 0) {
+							const lastToken = tokenList[tokenList.length - 1];
 							currentToken = endToken(source, currentToken, tokenList);
+
+							if (!lastToken) {
+								break;
+							}
+
+							switch (lastToken.type) {
+								case TOKEN_SINGLE_QUOTED_STRING_START:
+								case TOKEN_SINGLE_QUOTED_STRING_MIDDLE:
+								{
+									currentToken = createSingleCharToken(
+										TOKEN_SINGLE_QUOTED_STRING_END,
+										i + 1,
+										line,
+										offset + 1,
+									);
+
+									break;
+								}
+
+								case TOKEN_DOUBLE_QUOTED_STRING_START:
+								case TOKEN_DOUBLE_QUOTED_STRING_MIDDLE:
+								{
+									currentToken = createSingleCharToken(
+										TOKEN_DOUBLE_QUOTED_STRING_END,
+										i + 1,
+										line,
+										offset + 1,
+									);
+
+									break;
+								}
+							}
 						} else {
 							currentToken.end.index = i;
 							currentToken.end.line = line;

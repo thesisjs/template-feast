@@ -5,6 +5,12 @@ import {
 	TOKEN_SINGLE_QUOTED_STRING,
 	TOKEN_DOUBLE_QUOTED_STRING,
 	TOKEN_EXPRESSION,
+	TOKEN_SINGLE_QUOTED_STRING_START,
+	TOKEN_SINGLE_QUOTED_STRING_MIDDLE,
+	TOKEN_SINGLE_QUOTED_STRING_END,
+	TOKEN_DOUBLE_QUOTED_STRING_START,
+	TOKEN_DOUBLE_QUOTED_STRING_MIDDLE,
+	TOKEN_DOUBLE_QUOTED_STRING_END,
 	TOKEN_FORWARD_SLASH,
 	TOKEN_TAG_CLOSE,
 	TOKEN_ASSIGN,
@@ -300,6 +306,43 @@ describe('tokenizer tags', () => {
 			{type: TOKEN_STRING, value: 'onclick'},
 			{type: TOKEN_ASSIGN},
 			{type: TOKEN_EXPRESSION, value: `console.log('debug', {t: '<🦊>Hello!</🦊>'})`},
+			{type: TOKEN_FORWARD_SLASH},
+			{type: TOKEN_TAG_CLOSE},
+		]);
+	});
+
+});
+
+
+describe('tokenizer expressions', () => {
+
+	test('single-quoted expression', () => {
+		expect(
+			tokenize(`<button onclick='{console.log('debug', {t: '<🦊>Hello!</🦊>'})}'/>`)
+		).toMatchObject([
+			{type: TOKEN_TAG_OPEN},
+			{type: TOKEN_STRING, value: 'button'},
+			{type: TOKEN_STRING, value: 'onclick'},
+			{type: TOKEN_ASSIGN},
+			{type: TOKEN_SINGLE_QUOTED_STRING_START, value: ''},
+			{type: TOKEN_EXPRESSION, value: `console.log('debug', {t: '<🦊>Hello!</🦊>'})`},
+			{type: TOKEN_SINGLE_QUOTED_STRING_END, value: ''},
+			{type: TOKEN_FORWARD_SLASH},
+			{type: TOKEN_TAG_CLOSE},
+		]);
+	});
+
+	test('double-quoted expression', () => {
+		expect(
+			tokenize(`<button onclick="{console.log('debug', {t: '<🦊>Hello!</🦊>'})}"/>`)
+		).toMatchObject([
+			{type: TOKEN_TAG_OPEN},
+			{type: TOKEN_STRING, value: 'button'},
+			{type: TOKEN_STRING, value: 'onclick'},
+			{type: TOKEN_ASSIGN},
+			{type: TOKEN_DOUBLE_QUOTED_STRING_START, value: ''},
+			{type: TOKEN_EXPRESSION, value: `console.log('debug', {t: '<🦊>Hello!</🦊>'})`},
+			{type: TOKEN_DOUBLE_QUOTED_STRING_END, value: ''},
 			{type: TOKEN_FORWARD_SLASH},
 			{type: TOKEN_TAG_CLOSE},
 		]);
