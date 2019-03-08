@@ -101,6 +101,18 @@ function createSingleCharToken(type: TokenType, index: number, line: number, off
 	};
 }
 
+function updateTokenValue(source: string, token: IToken) {
+	if (token.end.index < token.start.index) {
+		token.end.index = token.start.index;
+		token.end.offset = token.start.index;
+	}
+
+	token.value = source.substring(
+		token.start.index,
+		token.end.index,
+	);
+}
+
 function endToken(source: string, token: IToken, tokenList: IToken[]): IToken {
 	const firstCharCode = source.charCodeAt(token.start.index);
 
@@ -114,10 +126,7 @@ function endToken(source: string, token: IToken, tokenList: IToken[]): IToken {
 		token.end.offset++;
 	}
 
-	token.value = source.substring(
-		token.start.index,
-		token.end.index,
-	);
+	updateTokenValue(source, token);
 
 	tokenList.push(token);
 
@@ -264,8 +273,12 @@ export function tokenize(source: string, options: ITokenizerOptions = {}): IToke
 
 					case TOKEN_SINGLE_QUOTED_STRING_END:
 					{
-						currentToken.end.index--;
-						currentToken.end.offset--;
+						currentToken.end = {
+							index: i - 1,
+							line,
+							offset: offset - 1,
+						};
+
 						currentToken = endToken(source, currentToken, tokenList);
 						break;
 					}
@@ -321,8 +334,12 @@ export function tokenize(source: string, options: ITokenizerOptions = {}): IToke
 
 					case TOKEN_DOUBLE_QUOTED_STRING_END:
 					{
-						currentToken.end.index--;
-						currentToken.end.offset--;
+						currentToken.end = {
+							index: i - 1,
+							line,
+							offset: offset - 1,
+						};
+
 						currentToken = endToken(source, currentToken, tokenList);
 						break;
 					}
@@ -362,9 +379,16 @@ export function tokenize(source: string, options: ITokenizerOptions = {}): IToke
 
 					case TOKEN_SINGLE_QUOTED_STRING:
 					{
-						currentToken.end.index--;
-						currentToken.end.offset--;
+						//currentToken.end.index--;
+						//currentToken.end.offset--;
 						currentToken.type = TOKEN_SINGLE_QUOTED_STRING_START;
+						currentToken.end = {
+							index: i - 1,
+							line,
+							offset: offset - 1,
+						};
+
+						updateTokenValue(source, currentToken);
 						currentToken = endToken(source, currentToken, tokenList);
 
 						currentToken = createSingleCharToken(
@@ -381,9 +405,16 @@ export function tokenize(source: string, options: ITokenizerOptions = {}): IToke
 
 					case TOKEN_SINGLE_QUOTED_STRING_END:
 					{
-						currentToken.end.index--;
-						currentToken.end.offset--;
+						//currentToken.start.index--;
+						//currentToken.start.offset--;
 						currentToken.type = TOKEN_SINGLE_QUOTED_STRING_MIDDLE;
+						currentToken.end = {
+							index: i - 1,
+							line,
+							offset: offset - 1,
+						};
+
+						updateTokenValue(source, currentToken);
 						currentToken = endToken(source, currentToken, tokenList);
 
 						currentToken = createSingleCharToken(
@@ -400,9 +431,16 @@ export function tokenize(source: string, options: ITokenizerOptions = {}): IToke
 
 					case TOKEN_DOUBLE_QUOTED_STRING:
 					{
-						currentToken.end.index--;
-						currentToken.end.offset--;
+						//currentToken.end.index--;
+						//currentToken.end.offset--;
 						currentToken.type = TOKEN_DOUBLE_QUOTED_STRING_START;
+						currentToken.end = {
+							index: i - 1,
+							line,
+							offset: offset - 1,
+						};
+
+						updateTokenValue(source, currentToken);
 						currentToken = endToken(source, currentToken, tokenList);
 
 						currentToken = createSingleCharToken(
@@ -419,9 +457,16 @@ export function tokenize(source: string, options: ITokenizerOptions = {}): IToke
 
 					case TOKEN_DOUBLE_QUOTED_STRING_END:
 					{
-						currentToken.end.index--;
-						currentToken.end.offset--;
+						//currentToken.end.index--;
+						//currentToken.end.offset--;
 						currentToken.type = TOKEN_DOUBLE_QUOTED_STRING_MIDDLE;
+						currentToken.end = {
+							index: i - 1,
+							line,
+							offset: offset - 1,
+						};
+
+						updateTokenValue(source, currentToken);
 						currentToken = endToken(source, currentToken, tokenList);
 
 						currentToken = createSingleCharToken(
@@ -469,8 +514,16 @@ export function tokenize(source: string, options: ITokenizerOptions = {}): IToke
 							}
 
 							switch (lastToken.type) {
-								case TOKEN_SINGLE_QUOTED_STRING_START:
 								case TOKEN_SINGLE_QUOTED_STRING_MIDDLE:
+								{
+									lastToken.end.index++;
+									lastToken.end.offset++;
+
+									updateTokenValue(source, lastToken);
+									// No break
+								}
+
+								case TOKEN_SINGLE_QUOTED_STRING_START:
 								{
 									currentToken = createSingleCharToken(
 										TOKEN_SINGLE_QUOTED_STRING_END,
@@ -482,8 +535,16 @@ export function tokenize(source: string, options: ITokenizerOptions = {}): IToke
 									break;
 								}
 
-								case TOKEN_DOUBLE_QUOTED_STRING_START:
 								case TOKEN_DOUBLE_QUOTED_STRING_MIDDLE:
+								{
+									lastToken.end.index++;
+									lastToken.end.offset++;
+
+									updateTokenValue(source, lastToken);
+									// No break
+								}
+
+								case TOKEN_DOUBLE_QUOTED_STRING_START:
 								{
 									currentToken = createSingleCharToken(
 										TOKEN_DOUBLE_QUOTED_STRING_END,

@@ -348,4 +348,40 @@ describe('tokenizer expressions', () => {
 		]);
 	});
 
+	test('single-quoted template expression', () => {
+		expect(
+			tokenize(`<button title='Hello, {l("debug", {t: '</🦊>'})}! {name} are my friend'/>`)
+		).toMatchObject([
+			{type: TOKEN_TAG_OPEN},
+			{type: TOKEN_STRING, value: 'button'},
+			{type: TOKEN_STRING, value: 'title'},
+			{type: TOKEN_ASSIGN},
+			{type: TOKEN_SINGLE_QUOTED_STRING_START, value: 'Hello, '},
+			{type: TOKEN_EXPRESSION, value: `l("debug", {t: '</🦊>'})`},
+			{type: TOKEN_SINGLE_QUOTED_STRING_MIDDLE, value: '! '},
+			{type: TOKEN_EXPRESSION, value: `name`},
+			{type: TOKEN_SINGLE_QUOTED_STRING_END, value: ' are my friend'},
+			{type: TOKEN_FORWARD_SLASH},
+			{type: TOKEN_TAG_CLOSE},
+		]);
+	});
+
+	test('souble-quoted template expression', () => {
+		expect(
+			tokenize(`<button title="Hello, {l("debug", {t: '</🦊>'})}! {name} are my friend"/>`)
+		).toMatchObject([
+			{type: TOKEN_TAG_OPEN},
+			{type: TOKEN_STRING, value: 'button'},
+			{type: TOKEN_STRING, value: 'title'},
+			{type: TOKEN_ASSIGN},
+			{type: TOKEN_DOUBLE_QUOTED_STRING_START, value: 'Hello, '},
+			{type: TOKEN_EXPRESSION, value: `l("debug", {t: '</🦊>'})`},
+			{type: TOKEN_DOUBLE_QUOTED_STRING_MIDDLE, value: '! '},
+			{type: TOKEN_EXPRESSION, value: `name`},
+			{type: TOKEN_DOUBLE_QUOTED_STRING_END, value: ' are my friend'},
+			{type: TOKEN_FORWARD_SLASH},
+			{type: TOKEN_TAG_CLOSE},
+		]);
+	});
+
 });
