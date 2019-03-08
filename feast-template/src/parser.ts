@@ -75,10 +75,20 @@ class Parser {
 		this.currentNode = node;
 	}
 
-	bake(node: IASTNode = this.currentNode) {
-		node.parent.children = node.parent.children || [];
-		node.parent.children.push(node);
-		this.currentNode = node.parent;
+	bake(expect?: ASTNodeType) {
+		this.currentNode.parent.children = this.currentNode.parent.children || [];
+		this.currentNode.parent.children.push(this.currentNode);
+		this.currentNode = this.currentNode.parent;
+
+		if (expect === undefined) {
+			return;
+		}
+
+		if (this.currentNode.type !== expect) {
+			throw new Error(
+				`Corrupted stack: expected ${expect}, but ${this.currentNode.type} was found instead`
+			);
+		}
 	}
 
 	setState(state: ParserState) {
@@ -151,7 +161,7 @@ Parser.switch(TOKEN_STRING, STATE_TAG_ATTRIBUTE_NAME, (parser, token) => {
 	});
 
 	// Restoring attribute node
-	parser.bake();
+	parser.bake(NODE_ATTRIBUTE);
 });
 
 Parser.switch(TOKEN_STRING, STATE_TAG_ATTRIBUTE_VALUE, (parser, token) => {
@@ -165,14 +175,14 @@ Parser.switch(TOKEN_STRING, STATE_TAG_ATTRIBUTE_VALUE, (parser, token) => {
 	});
 
 	// Restoring attribute node
-	parser.bake();
+	parser.bake(NODE_ATTRIBUTE);
 	// Restoring tag node
-	parser.bake();
+	parser.bake(NODE_TAG);
 });
 
 Parser.switch(TOKEN_STRING, STATE_TAG_ATTRIBUTE_ASSIGN, (parser, token) => {
 	// Restoring tag node
-	parser.bake();
+	parser.bake(NODE_TAG);
 
 	// Creating new attribute node
 	parser.push({
@@ -189,7 +199,7 @@ Parser.switch(TOKEN_STRING, STATE_TAG_ATTRIBUTE_ASSIGN, (parser, token) => {
 	});
 
 	// Restoring attribute node
-	parser.bake();
+	parser.bake(NODE_ATTRIBUTE);
 });
 
 Parser.switch(TOKEN_ASSIGN, STATE_TAG_ATTRIBUTE_ASSIGN, (parser) => {
@@ -204,7 +214,7 @@ Parser.switch(TOKEN_FORWARD_SLASH, STATE_TAG_ATTRIBUTE_ASSIGN, (parser) => {
 	parser.setState(STATE_TAG_CLOSING);
 
 	// Restoring tag node
-	parser.bake();
+	parser.bake(NODE_TAG);
 });
 
 Parser.switch(TOKEN_TAG_CLOSE, STATE_TAG_CLOSING, (parser, token) => {
@@ -212,7 +222,7 @@ Parser.switch(TOKEN_TAG_CLOSE, STATE_TAG_CLOSING, (parser, token) => {
 	parser.setState(STATE_INITIAL);
 
 	// Restoring tag node
-	parser.bake();
+	parser.bake(NODE_TEMPLATE);
 });
 
 export function parseFeastTemplate(source: string, options: IParserOptions = {}): IASTNode {
