@@ -3,6 +3,7 @@ import {
 	TOKEN_TAG_OPEN,
 	TOKEN_STRING,
 	TOKEN_SINGLE_QUOTED_STRING,
+	TOKEN_DOUBLE_QUOTED_STRING,
 	TOKEN_FORWARD_SLASH,
 	TOKEN_TAG_CLOSE, TOKEN_ASSIGN,
 } from "../src/tokenizer";
@@ -260,15 +261,29 @@ describe('tokenizer tags', () => {
 		]);
 	});
 
-	test('one self-closing, one attribute with single-quoted', () => {
+	test('one self-closing, one attribute with single-quoted value', () => {
 		expect(
-			tokenize('<button title=\'🦊 click me! 🦊\'/>')
+			tokenize(`<button title=\'<🦊> "click" me! </🦊>\'/>`)
 		).toMatchObject([
 			{type: TOKEN_TAG_OPEN},
 			{type: TOKEN_STRING, value: 'button'},
 			{type: TOKEN_STRING, value: 'title'},
 			{type: TOKEN_ASSIGN},
-			{type: TOKEN_SINGLE_QUOTED_STRING, value: '🦊 click me! 🦊'},
+			{type: TOKEN_SINGLE_QUOTED_STRING, value: `<🦊> "click" me! </🦊>`},
+			{type: TOKEN_FORWARD_SLASH},
+			{type: TOKEN_TAG_CLOSE},
+		]);
+	});
+
+	test('one self-closing, one attribute with double-quoted value', () => {
+		expect(
+			tokenize(`<button title="<🦊> 'click' me! </🦊>"/>`)
+		).toMatchObject([
+			{type: TOKEN_TAG_OPEN},
+			{type: TOKEN_STRING, value: 'button'},
+			{type: TOKEN_STRING, value: 'title'},
+			{type: TOKEN_ASSIGN},
+			{type: TOKEN_DOUBLE_QUOTED_STRING, value: `<🦊> 'click' me! </🦊>`},
 			{type: TOKEN_FORWARD_SLASH},
 			{type: TOKEN_TAG_CLOSE},
 		]);
