@@ -389,4 +389,40 @@ describe('tokenizer expressions', () => {
 		]);
 	});
 
+	test('single-quoted template expression min', () => {
+		expect(
+			tokenize(`<button title='!{a()}:{b()}.'/>`)
+		).toMatchObject([
+			{type: TOKEN_TAG_OPEN},
+			{type: TOKEN_STRING, value: 'button'},
+			{type: TOKEN_STRING, value: 'title'},
+			{type: TOKEN_ASSIGN},
+			{type: TOKEN_SINGLE_QUOTED_STRING_START, value: '!'},
+			{type: TOKEN_EXPRESSION, value: `a()`},
+			{type: TOKEN_SINGLE_QUOTED_STRING_MIDDLE, value: ':'},
+			{type: TOKEN_EXPRESSION, value: `b()`},
+			{type: TOKEN_SINGLE_QUOTED_STRING_END, value: '.'},
+			{type: TOKEN_FORWARD_SLASH},
+			{type: TOKEN_TAG_CLOSE},
+		]);
+	});
+
+	test('double-quoted template expression min', () => {
+		expect(
+			tokenize(`<button title="!{a()}:{b()}."/>`)
+		).toMatchObject([
+			{type: TOKEN_TAG_OPEN},
+			{type: TOKEN_STRING, value: 'button'},
+			{type: TOKEN_STRING, value: 'title'},
+			{type: TOKEN_ASSIGN},
+			{type: TOKEN_DOUBLE_QUOTED_STRING_START, value: '!'},
+			{type: TOKEN_EXPRESSION, value: `a()`},
+			{type: TOKEN_DOUBLE_QUOTED_STRING_MIDDLE, value: ':'},
+			{type: TOKEN_EXPRESSION, value: `b()`},
+			{type: TOKEN_DOUBLE_QUOTED_STRING_END, value: '.'},
+			{type: TOKEN_FORWARD_SLASH},
+			{type: TOKEN_TAG_CLOSE},
+		]);
+	});
+
 });

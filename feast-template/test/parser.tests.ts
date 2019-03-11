@@ -318,7 +318,7 @@ describe('AST tags', () => {
 												type: TOKEN_EXPRESSION,
 												value: 'alert()',
 											},
-										}
+										},
 									],
 								},
 							],

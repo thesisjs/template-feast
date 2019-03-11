@@ -40,6 +40,10 @@ export class Parser {
 		Parser.cases[token][state] = handler;
 	}
 
+	static case(token: TokenType, state: ParserState): ParserSwitchHandler {
+		return Parser.cases[token] && Parser.cases[token][state];
+	}
+
 	public currentNode: IASTNode;
 	public state: ParserState = STATE_INITIAL;
 	public died: boolean = false;
