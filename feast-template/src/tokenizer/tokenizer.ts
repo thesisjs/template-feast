@@ -101,12 +101,6 @@ export function updateTokenValue(source: string, token: IToken) {
 		token.end.offset = token.start.index;
 	}
 
-	// Literally fuck this
-	if (token.end.index === token.start.index) {
-		debugger;
-		// token.start.index--;
-	}
-
 	token.value = source.substring(
 		token.start.index,
 		token.end.index,

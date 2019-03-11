@@ -191,7 +191,7 @@ Tokenizer.switch(CHAR_EQUALITY_SYMBOL, TOKEN_STRING, ruleFactoryEndAndCreateToke
 Tokenizer.switch(CHAR_EQUALITY_SYMBOL, DEFAULT, ruleFactoryCreateToken(TOKEN_ASSIGN));
 
 Tokenizer.switch(CHAR_SINGLE_QUOTE, TOKEN_SINGLE_QUOTED_STRING, ruleEndToken);
-Tokenizer.switch(CHAR_SINGLE_QUOTE, TOKEN_SINGLE_QUOTED_STRING_END, ruleFactoryIncAndEndToken(0, -1));
+Tokenizer.switch(CHAR_SINGLE_QUOTE, TOKEN_SINGLE_QUOTED_STRING_END, ruleFactoryIncAndEndToken(0, 0));
 Tokenizer.switch(CHAR_SINGLE_QUOTE, TOKEN_DOUBLE_QUOTED_STRING, ruleIncToken);
 Tokenizer.switch(CHAR_SINGLE_QUOTE, TOKEN_DOUBLE_QUOTED_STRING_END, ruleIncToken);
 Tokenizer.switch(CHAR_SINGLE_QUOTE, TOKEN_EXPRESSION, ruleIncToken);
@@ -200,7 +200,7 @@ Tokenizer.switch(CHAR_SINGLE_QUOTE, DEFAULT, ruleFactoryEndAndReplaceToken(TOKEN
 Tokenizer.switch(CHAR_DOUBLE_QUOTE, TOKEN_SINGLE_QUOTED_STRING, ruleIncToken);
 Tokenizer.switch(CHAR_DOUBLE_QUOTE, TOKEN_SINGLE_QUOTED_STRING_END, ruleIncToken);
 Tokenizer.switch(CHAR_DOUBLE_QUOTE, TOKEN_DOUBLE_QUOTED_STRING, ruleEndToken);
-Tokenizer.switch(CHAR_DOUBLE_QUOTE, TOKEN_DOUBLE_QUOTED_STRING_END, ruleFactoryIncAndEndToken(0, -1));
+Tokenizer.switch(CHAR_DOUBLE_QUOTE, TOKEN_DOUBLE_QUOTED_STRING_END, ruleFactoryIncAndEndToken(0, 0));
 Tokenizer.switch(CHAR_DOUBLE_QUOTE, TOKEN_EXPRESSION, ruleIncToken);
 Tokenizer.switch(CHAR_DOUBLE_QUOTE, DEFAULT, ruleFactoryEndAndReplaceToken(TOKEN_DOUBLE_QUOTED_STRING, 1));
 
@@ -220,16 +220,16 @@ Tokenizer.switch(CHAR_OPEN_CURLY, TOKEN_EXPRESSION, ruleIncTokenAndCurly);
 Tokenizer.switch(CHAR_OPEN_CURLY, DEFAULT, ruleFactoryReplaceTokenAndIncCurly(TOKEN_EXPRESSION, 1));
 
 Tokenizer.switch(CHAR_OPEN_CURLY, TOKEN_SINGLE_QUOTED_STRING, ruleFactoryMutateToken(
-	TOKEN_SINGLE_QUOTED_STRING_START, TOKEN_EXPRESSION, 0, -1));
+	TOKEN_SINGLE_QUOTED_STRING_START, TOKEN_EXPRESSION, 0, 0));
 
 Tokenizer.switch(CHAR_OPEN_CURLY, TOKEN_SINGLE_QUOTED_STRING_END, ruleFactoryMutateToken(
-	TOKEN_SINGLE_QUOTED_STRING_MIDDLE, TOKEN_EXPRESSION, 0, -1));
+	TOKEN_SINGLE_QUOTED_STRING_MIDDLE, TOKEN_EXPRESSION, 0, 0));
 
 Tokenizer.switch(CHAR_OPEN_CURLY, TOKEN_DOUBLE_QUOTED_STRING, ruleFactoryMutateToken(
-	TOKEN_DOUBLE_QUOTED_STRING_START, TOKEN_EXPRESSION, 0, -1));
+	TOKEN_DOUBLE_QUOTED_STRING_START, TOKEN_EXPRESSION, 0, 0));
 
 Tokenizer.switch(CHAR_OPEN_CURLY, TOKEN_DOUBLE_QUOTED_STRING_END, ruleFactoryMutateToken(
-	TOKEN_DOUBLE_QUOTED_STRING_MIDDLE, TOKEN_EXPRESSION, 0, -1));
+	TOKEN_DOUBLE_QUOTED_STRING_MIDDLE, TOKEN_EXPRESSION, 0, 0));
 
 Tokenizer.switch(CHAR_CLOSE_CURLY, DEFAULT, ruleIncToken);
 
@@ -250,14 +250,6 @@ Tokenizer.switch(CHAR_CLOSE_CURLY, TOKEN_EXPRESSION, t => {
 
 	switch (lastToken.type) {
 		case TOKEN_SINGLE_QUOTED_STRING_MIDDLE:
-		{
-			lastToken.end.index++;
-			lastToken.end.offset++;
-
-			updateTokenValue(t.source, lastToken);
-			// No break
-		}
-
 		case TOKEN_SINGLE_QUOTED_STRING_START:
 		{
 			ruleFactoryReplaceToken(TOKEN_SINGLE_QUOTED_STRING_END, 1)(t);
@@ -265,14 +257,6 @@ Tokenizer.switch(CHAR_CLOSE_CURLY, TOKEN_EXPRESSION, t => {
 		}
 
 		case TOKEN_DOUBLE_QUOTED_STRING_MIDDLE:
-		{
-			lastToken.end.index++;
-			lastToken.end.offset++;
-
-			updateTokenValue(t.source, lastToken);
-			// No break
-		}
-
 		case TOKEN_DOUBLE_QUOTED_STRING_START:
 		{
 			ruleFactoryReplaceToken(TOKEN_DOUBLE_QUOTED_STRING_END, 1)(t);
