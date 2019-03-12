@@ -93,6 +93,38 @@ describe('tokenizer tags addon: attributes', () => {
 			{type: TOKEN_TAG_CLOSE}
 		]);
 	});
+
+	test('value, one space', () => {
+		expect(
+			tokenize('attr = value />', {debug: true})
+		).toMatchObject([
+			{
+				type: TOKEN_STRING,
+				start: {index: 0, offset: 1},
+				end: {index: 4, offset: 5},
+				value: 'attr',
+			},
+			{
+				type: TOKEN_ASSIGN,
+				start: {index: 5, offset: 6},
+				end: {index: 6, offset: 7},
+				value: '=',
+			},
+			{
+				type: TOKEN_STRING,
+				start: {index: 7, offset: 8},
+				end: {index: 12, offset: 13},
+				value: 'value',
+			},
+			{
+				type: TOKEN_FORWARD_SLASH,
+				start: {index: 13, offset: 14},
+				end: {index: 14, offset: 15},
+				value: '/',
+			},
+			{type: TOKEN_TAG_CLOSE}
+		]);
+	});
 });
 
 describe('tokenizer tags addon: spaces', () => {
