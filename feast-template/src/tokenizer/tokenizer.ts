@@ -25,6 +25,7 @@ export interface IToken {
 
 export interface ITokenizerOptions {
 	lineDelimiter?: string;
+	debug?: boolean;
 }
 
 type TokenizerSwitchHandler = (tokenizer: Tokenizer, charCode: number) => any;
@@ -37,9 +38,14 @@ export class Tokenizer {
 		Tokenizer.cases[charCode][<string> <unknown> tokenType] = handler;
 	}
 
-	constructor(public source: string, public lineDelimiterMatcher: LineDelimiterMatcher) {};
+	constructor(
+		public source: string,
+		public lineDelimiterMatcher: LineDelimiterMatcher,
+		public debug: boolean = false,
+	) {};
 
 	public tokenList: IToken[] = [];
+	public debugLog: string[] = [];
 	public currentToken: IToken;
 	public index = 0;
 	public line = 1;
@@ -55,11 +61,34 @@ export class Tokenizer {
 		}
 
 		if (handler) {
+			let prevDebugLog;
+
+			// Debugging all rule applications
+			if (this.debug) {
+				this.debugLog.push(`${charCode}[${String.fromCharCode(charCode)}]: ${handler.name}`);
+				// Debug log stack
+				prevDebugLog = this.debugLog;
+				this.debugLog = [];
+			}
+
 			handler(this, charCode);
+
+			if (this.debug) {
+				prevDebugLog.push.apply(
+					prevDebugLog,
+					this.debugLog.map(_ => `    ${_}`),
+				);
+				// Debug log stack pop
+				this.debugLog = prevDebugLog;
+			}
 		}
 	}
 
 	endToken() {
+		if (!this.currentToken) {
+			return;
+		}
+
 		const firstCharCode = this.source.charCodeAt(this.currentToken.start.index);
 
 		if (
