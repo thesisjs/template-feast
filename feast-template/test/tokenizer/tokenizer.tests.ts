@@ -1,6 +1,6 @@
 import {
 	tokenize,
-} from "../src/tokenizer";
+} from "../../src/tokenizer";
 
 import {
 	TOKEN_TAG_OPEN,
@@ -17,12 +17,68 @@ import {
 	TOKEN_FORWARD_SLASH,
 	TOKEN_TAG_CLOSE,
 	TOKEN_ASSIGN,
-} from "../src/tokenizer/types";
+} from "../../src/tokenizer/types";
 
 
-describe('tokenizer tokens', () => {
+describe('tokenizer core tokens', () => {
 
-	test('unicode', () => {
+	test('string', () => {
+		expect(
+			tokenize('attr', {debug: true})
+		).toMatchObject([
+			{
+				type: TOKEN_STRING,
+				start: {
+					index: 0,
+					line: 1,
+					offset: 1,
+				},
+				end: {
+					index: 4,
+					line: 1,
+					offset: 5,
+				},
+				value: 'attr',
+			},
+		]);
+	});
+
+	test('two strings with one space', () => {
+		expect(
+			tokenize('lol kek', {debug: true})
+		).toMatchObject([
+			{
+				type: TOKEN_STRING,
+				start: {
+					index: 0,
+					line: 1,
+					offset: 1,
+				},
+				end: {
+					index: 3,
+					line: 1,
+					offset: 4,
+				},
+				value: 'lol',
+			},
+			{
+				type: TOKEN_STRING,
+				start: {
+					index: 4,
+					line: 1,
+					offset: 5,
+				},
+				end: {
+					index: 7,
+					line: 1,
+					offset: 8,
+				},
+				value: 'kek',
+			},
+		]);
+	});
+
+	test('one emoji', () => {
 		expect(
 			tokenize('🤔')
 		).toMatchObject([
@@ -33,7 +89,7 @@ describe('tokenizer tokens', () => {
 });
 
 
-describe('tokenizer source maps', () => {
+/*describe('tokenizer source maps', () => {
 
 	test('no spaces, no line breaks', () => {
 		expect(
@@ -426,3 +482,4 @@ describe('tokenizer expressions', () => {
 	});
 
 });
+*/

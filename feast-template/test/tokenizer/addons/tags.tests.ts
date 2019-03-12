@@ -211,6 +211,5 @@ describe('tokenizer tags addon: spaces', () => {
 		]);
 	});
 
-
 });
 
