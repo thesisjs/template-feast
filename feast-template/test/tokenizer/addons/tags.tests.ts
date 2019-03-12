@@ -148,6 +148,69 @@ describe('tokenizer tags addon: spaces', () => {
 		]);
 	});
 
+	test('two spaces', () => {
+		expect(
+			tokenize('  <  tag  /  >  ', {debug: true})
+		).toMatchObject([
+			{
+				type: TOKEN_TAG_OPEN,
+				start: {
+					index: 2,
+					line: 1,
+					offset: 3,
+				},
+				end: {
+					index: 3,
+					line: 1,
+					offset: 4,
+				},
+				value: '<',
+			},
+			{
+				type: TOKEN_STRING,
+				start: {
+					index: 5,
+					line: 1,
+					offset: 6,
+				},
+				end: {
+					index: 8,
+					line: 1,
+					offset: 9,
+				},
+				value: 'tag',
+			},
+			{
+				type: TOKEN_FORWARD_SLASH,
+				start: {
+					index: 10,
+					line: 1,
+					offset: 11,
+				},
+				end: {
+					index: 11,
+					line: 1,
+					offset: 12,
+				},
+				value: '/',
+			},
+			{
+				type: TOKEN_TAG_CLOSE,
+				start: {
+					index: 13,
+					line: 1,
+					offset: 14,
+				},
+				end: {
+					index: 14,
+					line: 1,
+					offset: 15,
+				},
+				value: '>',
+			},
+		]);
+	});
+
 
 });
 
