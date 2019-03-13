@@ -101,6 +101,10 @@ export class Tokenizer {
 			this.currentToken.end.offset++;
 		}
 
+		if (this.currentToken.end.index < this.currentToken.start.index) {
+			this.currentToken.end = {...this.currentToken.start};
+		}
+
 		updateTokenValue(this.source, this.currentToken);
 
 		this.tokenList.push(this.currentToken);

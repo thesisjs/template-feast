@@ -28,6 +28,7 @@ import {
 
 // Addons
 import "./addons/tags";
+import "./addons/expressions";
 
 
 [

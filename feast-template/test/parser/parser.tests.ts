@@ -1,6 +1,6 @@
 import {
 	parse,
-} from "../src/parser";
+} from "../../src/parser";
 
 import {
 	NODE_TAG,
@@ -10,12 +10,12 @@ import {
 	NODE_ATTRIBUTE_VALUE,
 	NODE_ATTRIBUTE_TEMPLATE_VALUE,
 	NODE_EXPRESSION,
-} from "../src/parser/types";
+} from "../../src/parser/types";
 
 import {
 	TOKEN_STRING,
 	TOKEN_EXPRESSION,
-} from "../src/tokenizer/types";
+} from "../../src/tokenizer/types";
 
 
 describe('AST source maps', () => {
