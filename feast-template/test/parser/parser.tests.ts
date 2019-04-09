@@ -24,10 +24,10 @@ describe('AST source maps', () => {
 		expect(
 			parse('<button/>'),
 		).toMatchObject({
-			type: 'feast::template',
+			type: NODE_TEMPLATE,
 			children: [
 				{
-					type: 'feast::tag',
+					type: NODE_TAG,
 					start: {
 						index: 0,
 						line: 1,
@@ -60,10 +60,10 @@ describe('AST source maps', () => {
 		expect(
 			parse('  <  button / >   '),
 		).toMatchObject({
-			type: 'feast::template',
+			type: NODE_TEMPLATE,
 			children: [
 				{
-					type: 'feast::tag',
+					type: NODE_TAG,
 					start: {
 						index: 2,
 						line: 1,
@@ -96,10 +96,10 @@ describe('AST source maps', () => {
 		expect(
 			parse('  \n\t\t<  button\n\n\t\t />   ', {lineDelimiter: '\n'}),
 		).toMatchObject({
-			type: 'feast::template',
+			type: NODE_TEMPLATE,
 			children: [
 				{
-					type: 'feast::tag',
+					type: NODE_TAG,
 					start: {
 						index: 5,
 						line: 2,

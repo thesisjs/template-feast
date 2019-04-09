@@ -3,6 +3,7 @@ import {
 } from "./line-delimiter-matcher";
 
 import {
+	TOKEN_STRING,
 	TokenType,
 } from "./types";
 
@@ -132,6 +133,15 @@ export function updateTokenValue(source: string, token: IToken) {
 	if (token.end.index < token.start.index) {
 		token.end.index = token.start.index;
 		token.end.offset = token.start.index;
+	}
+
+	// Коррекция невырожденной строки
+	if (
+		token.type === TOKEN_STRING &&
+		(token.end.index - token.start.index) > 1
+	) {
+		token.end.index--;
+		token.end.offset--;
 	}
 
 	token.value = source.substring(

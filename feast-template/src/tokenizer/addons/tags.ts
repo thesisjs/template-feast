@@ -53,6 +53,14 @@ Tokenizer.switch(CHAR_TAG_END, TOKEN_FORWARD_SLASH, ruleCombine(
 	ruleStartToken(TOKEN_TAG_CLOSE),
 ));
 
+// ==== Tag open after forward slash ====
+
+Tokenizer.switch(CHAR_TAG_START, TOKEN_TAG_CLOSE, ruleCombine(
+	ruleIncToken(),
+	ruleEndToken(),
+	ruleStartToken(TOKEN_TAG_OPEN),
+));
+
 // ==== Close tag before EOF ====
 
 Tokenizer.switch(CHAR_EOF, TOKEN_TAG_CLOSE, ruleCombine(

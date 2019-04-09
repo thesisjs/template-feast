@@ -20,7 +20,7 @@ import {
 
 describe('AST template values', () => {
 
-	xtest('one self-closing, one attribute with a templated expression value', () => {
+	test('one self-closing, one attribute with a templated expression value', () => {
 		expect(
 			parse('<button title="Welcome, {input()}!"/>'),
 		).toMatchObject({

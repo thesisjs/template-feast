@@ -3,7 +3,6 @@ import {
 } from "./types";
 
 import {
-	createSingleCharToken,
 	Tokenizer
 } from "./tokenizer";
 
@@ -40,7 +39,7 @@ export function ruleEndToken() {
 }
 
 /**
- * Increases token to contain current symbol
+ * Increases token to contain the symbol behind current
  */
 export function ruleIncToken() {
 	return function ruleIncTokenImpl(t: Tokenizer) {

@@ -38,6 +38,7 @@ import "./addons/expressions";
 	CHAR_CR,
 ].forEach(charCode => {
 	Tokenizer.switch(charCode, DEFAULT, ruleCombine(
+		ruleIncToken(),
 		ruleEndToken(),
 		ruleBreakLine(),
 	));
@@ -46,13 +47,15 @@ import "./addons/expressions";
 Tokenizer.switch(DEFAULT, DEFAULT, function defaultRule(t) {
 	if (t.currentToken === undefined) {
 		ruleStartToken(TOKEN_STRING)(t);
-		return;
 	}
 
 	ruleIncToken()(t);
 });
 
-Tokenizer.switch(CHAR_EOF, DEFAULT, ruleEndToken());
+Tokenizer.switch(CHAR_EOF, DEFAULT, ruleCombine(
+	ruleIncToken(),
+	ruleEndToken(),
+));
 
 
 /**

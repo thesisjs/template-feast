@@ -24,9 +24,14 @@ import {
 
 
 export function createSingleCharParser(charCode: number, tokenType: TokenType) {
-	Tokenizer.switch(charCode, DEFAULT, ruleStartToken(tokenType));
+	Tokenizer.switch(charCode, DEFAULT, ruleCombine(
+		ruleIncToken(),
+		ruleEndToken(),
+		ruleStartToken(tokenType),
+	));
 
 	Tokenizer.switch(charCode, TOKEN_STRING, ruleCombine(
+		ruleIncToken(),
 		ruleEndToken(),
 		ruleStartToken(tokenType),
 	));

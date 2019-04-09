@@ -1,12 +1,12 @@
 
-export const NODE_TEMPLATE = 'feast::template';
-export const NODE_TAG = 'feast::tag';
-export const NODE_ERROR = 'feast::error';
-export const NODE_ATTRIBUTE = 'feast::attribute';
-export const NODE_ATTRIBUTE_NAME = 'feast::attribute-name';
-export const NODE_ATTRIBUTE_VALUE = 'feast::attribute-value';
-export const NODE_ATTRIBUTE_TEMPLATE_VALUE = 'feast::attribute-template-value';
-export const NODE_EXPRESSION = 'feast::expression';
+export const NODE_TEMPLATE = 'node::template';
+export const NODE_TAG = 'node::tag';
+export const NODE_ERROR = 'node::error';
+export const NODE_ATTRIBUTE = 'node::attribute';
+export const NODE_ATTRIBUTE_NAME = 'node::attribute-name';
+export const NODE_ATTRIBUTE_VALUE = 'node::attribute-value';
+export const NODE_ATTRIBUTE_TEMPLATE_VALUE = 'node::attribute-template-value';
+export const NODE_EXPRESSION = 'node::expression';
 
 export type ASTNodeType = typeof NODE_TEMPLATE
 	| typeof NODE_TAG
@@ -17,13 +17,13 @@ export type ASTNodeType = typeof NODE_TEMPLATE
 	| typeof NODE_ATTRIBUTE_TEMPLATE_VALUE
 	| typeof NODE_EXPRESSION;
 
-export const STATE_INITIAL = 0;
-export const STATE_TAG_OPEN = 1;
-export const STATE_TAG_ATTRIBUTE_NAME = 2;
-export const STATE_TAG_ATTRIBUTE_ASSIGN = 3;
-export const STATE_TAG_ATTRIBUTE_VALUE = 4;
-export const STATE_TAG_ATTRIBUTE_TEMPLATE_VALUE = 5;
-export const STATE_TAG_CLOSING = 6;
+export const STATE_INITIAL = 'state::initial';
+export const STATE_TAG_OPEN = 'state::tag-open';
+export const STATE_TAG_ATTRIBUTE_NAME = 'state::tag-attribute-name';
+export const STATE_TAG_ATTRIBUTE_ASSIGN = 'state::tag-attribute-assign';
+export const STATE_TAG_ATTRIBUTE_VALUE = 'state::tag-attribute-value';
+export const STATE_TAG_ATTRIBUTE_TEMPLATE_VALUE = 'state::tag-attribute-template-value';
+export const STATE_TAG_CLOSING = 'state::tag-closing';
 
 export type ParserState = typeof STATE_INITIAL
 	| typeof STATE_TAG_OPEN

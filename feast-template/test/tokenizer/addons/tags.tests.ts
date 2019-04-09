@@ -215,3 +215,160 @@ describe('tokenizer tags addon: spaces', () => {
 
 });
 
+describe('tokenizer tags addon: various tags', () => {
+
+	test('two tags', () => {
+		expect(
+			tokenize('<tag/><tag/>', {debug: true})
+		).toMatchObject([
+			{
+				type: TOKEN_TAG_OPEN,
+				value: '<',
+			},
+			{
+				type: TOKEN_STRING,
+				value: 'tag',
+			},
+			{
+				type: TOKEN_FORWARD_SLASH,
+				value: '/',
+			},
+			{
+				type: TOKEN_TAG_CLOSE,
+				value: '>',
+			},
+			{
+				type: TOKEN_TAG_OPEN,
+				value: '<',
+			},
+			{
+				type: TOKEN_STRING,
+				value: 'tag',
+			},
+			{
+				type: TOKEN_FORWARD_SLASH,
+				value: '/',
+			},
+			{
+				type: TOKEN_TAG_CLOSE,
+				value: '>',
+			},
+		]);
+	});
+
+	test('two tags one space', () => {
+		expect(
+			tokenize('<tag/> <tag/>', {debug: true})
+		).toMatchObject([
+			{
+				type: TOKEN_TAG_OPEN,
+				value: '<',
+			},
+			{
+				type: TOKEN_STRING,
+				value: 'tag',
+			},
+			{
+				type: TOKEN_FORWARD_SLASH,
+				value: '/',
+			},
+			{
+				type: TOKEN_TAG_CLOSE,
+				value: '>',
+			},
+			{
+				type: TOKEN_TAG_OPEN,
+				value: '<',
+			},
+			{
+				type: TOKEN_STRING,
+				value: 'tag',
+			},
+			{
+				type: TOKEN_FORWARD_SLASH,
+				value: '/',
+			},
+			{
+				type: TOKEN_TAG_CLOSE,
+				value: '>',
+			},
+		]);
+	});
+
+	test('one-char tag', () => {
+		expect(
+			tokenize('<i/>', {debug: true})
+		).toMatchObject([
+			{
+				type: TOKEN_TAG_OPEN,
+				start: {index: 0, offset: 1},
+				end: {index: 1, offset: 2},
+				value: '<',
+			},
+			{
+				type: TOKEN_STRING,
+				start: {index: 1, offset: 2},
+				end: {index: 2, offset: 3},
+				value: 'i',
+			},
+			{
+				type: TOKEN_FORWARD_SLASH,
+				start: {index: 2, offset: 3},
+				end: {index: 3, offset: 4},
+				value: '/',
+			},
+			{
+				type: TOKEN_TAG_CLOSE,
+				start: {index: 3, offset: 4},
+				end: {index: 4, offset: 5},
+				value: '>',
+			},
+		]);
+	});
+
+	test('fragment tag opem', () => {
+		expect(
+			tokenize('<>', {debug: true})
+		).toMatchObject([
+			{
+				type: TOKEN_TAG_OPEN,
+				start: {index: 0, offset: 1},
+				end: {index: 1, offset: 2},
+				value: '<',
+			},
+			{
+				type: TOKEN_TAG_CLOSE,
+				start: {index: 1, offset: 2},
+				end: {index: 2, offset: 3},
+				value: '>',
+			},
+		]);
+	});
+
+	test('fragment tag close', () => {
+		expect(
+			tokenize('</>', {debug: true})
+		).toMatchObject([
+			{
+				type: TOKEN_TAG_OPEN,
+				start: {index: 0, offset: 1},
+				end: {index: 1, offset: 2},
+				value: '<',
+			},
+			{
+				type: TOKEN_FORWARD_SLASH,
+				start: {index: 1, offset: 2},
+				end: {index: 2, offset: 3},
+				value: '/',
+			},
+			{
+				type: TOKEN_TAG_CLOSE,
+				start: {index: 2, offset: 3},
+				end: {index: 3, offset: 4},
+				value: '>',
+			},
+		]);
+	});
+
+});
+
