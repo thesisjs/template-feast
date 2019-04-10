@@ -1,6 +1,6 @@
 import {
 	tokenize,
-} from "../src/tokenizer";
+} from "../../src/tokenizer";
 
 import {
 	TOKEN_TAG_OPEN,
@@ -17,12 +17,68 @@ import {
 	TOKEN_FORWARD_SLASH,
 	TOKEN_TAG_CLOSE,
 	TOKEN_ASSIGN,
-} from "../src/tokenizer/types";
+} from "../../src/tokenizer/types";
 
 
-describe('tokenizer tokens', () => {
+describe('tokenizer core tokens', () => {
 
-	test('unicode', () => {
+	test('string', () => {
+		expect(
+			tokenize('attr', {debug: true})
+		).toMatchObject([
+			{
+				type: TOKEN_STRING,
+				start: {
+					index: 0,
+					line: 1,
+					offset: 1,
+				},
+				end: {
+					index: 4,
+					line: 1,
+					offset: 5,
+				},
+				value: 'attr',
+			},
+		]);
+	});
+
+	test('two strings with one space', () => {
+		expect(
+			tokenize('lol kek', {debug: true})
+		).toMatchObject([
+			{
+				type: TOKEN_STRING,
+				start: {
+					index: 0,
+					line: 1,
+					offset: 1,
+				},
+				end: {
+					index: 3,
+					line: 1,
+					offset: 4,
+				},
+				value: 'lol',
+			},
+			{
+				type: TOKEN_STRING,
+				start: {
+					index: 4,
+					line: 1,
+					offset: 5,
+				},
+				end: {
+					index: 7,
+					line: 1,
+					offset: 8,
+				},
+				value: 'kek',
+			},
+		]);
+	});
+
+	test('one emoji', () => {
 		expect(
 			tokenize('🤔')
 		).toMatchObject([
@@ -33,7 +89,7 @@ describe('tokenizer tokens', () => {
 });
 
 
-describe('tokenizer source maps', () => {
+/*describe('tokenizer source maps', () => {
 
 	test('no spaces, no line breaks', () => {
 		expect(
@@ -389,4 +445,41 @@ describe('tokenizer expressions', () => {
 		]);
 	});
 
+	test('single-quoted template expression min', () => {
+		expect(
+			tokenize(`<button title='!{a()}:{b()}.'/>`)
+		).toMatchObject([
+			{type: TOKEN_TAG_OPEN},
+			{type: TOKEN_STRING, value: 'button'},
+			{type: TOKEN_STRING, value: 'title'},
+			{type: TOKEN_ASSIGN},
+			{type: TOKEN_SINGLE_QUOTED_STRING_START, value: '!'},
+			{type: TOKEN_EXPRESSION, value: `a()`},
+			{type: TOKEN_SINGLE_QUOTED_STRING_MIDDLE, value: ':'},
+			{type: TOKEN_EXPRESSION, value: `b()`},
+			{type: TOKEN_SINGLE_QUOTED_STRING_END, value: '.'},
+			{type: TOKEN_FORWARD_SLASH},
+			{type: TOKEN_TAG_CLOSE},
+		]);
+	});
+
+	test('double-quoted template expression min', () => {
+		expect(
+			tokenize(`<button title="!{a()}:{b()}."/>`)
+		).toMatchObject([
+			{type: TOKEN_TAG_OPEN},
+			{type: TOKEN_STRING, value: 'button'},
+			{type: TOKEN_STRING, value: 'title'},
+			{type: TOKEN_ASSIGN},
+			{type: TOKEN_DOUBLE_QUOTED_STRING_START, value: '!'},
+			{type: TOKEN_EXPRESSION, value: `a()`},
+			{type: TOKEN_DOUBLE_QUOTED_STRING_MIDDLE, value: ':'},
+			{type: TOKEN_EXPRESSION, value: `b()`},
+			{type: TOKEN_DOUBLE_QUOTED_STRING_END, value: '.'},
+			{type: TOKEN_FORWARD_SLASH},
+			{type: TOKEN_TAG_CLOSE},
+		]);
+	});
+
 });
+*/

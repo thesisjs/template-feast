@@ -33,11 +33,15 @@ export interface IParserOptions {
 }
 
 export class Parser {
-	private static cases: {[key: string]: {[key: number]: ParserSwitchHandler}} = {};
+	private static cases: {[key: string]: {[key: string]: ParserSwitchHandler}} = {};
 
 	static switch(token: TokenType, state: ParserState, handler: ParserSwitchHandler) {
 		Parser.cases[token] = Parser.cases[token] || {};
 		Parser.cases[token][state] = handler;
+	}
+
+	static case(token: TokenType, state: ParserState): ParserSwitchHandler {
+		return Parser.cases[token] && Parser.cases[token][state];
 	}
 
 	public currentNode: IASTNode;
@@ -77,14 +81,21 @@ export class Parser {
 		const transitions = Parser.cases[token.type];
 
 		if (!transitions) {
-			this.raiseError(token, 'Tag attribute value assignment expected');
+			this.raiseError(token, `Cannot consume ${token.type}`);
 			return;
 		}
 
 		const handler = transitions[this.state];
 
 		if (!handler) {
-			this.raiseError(token, 'Tag attribute value assignment expected');
+			this.raiseError(
+				token,
+				`Cannot consume ${
+					token.type
+				} from ${
+					this.state
+				}: expecting state to be one of the following: ${Object.keys(transitions).join(', ')}`,
+			);
 			return;
 		}
 

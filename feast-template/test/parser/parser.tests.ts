@@ -1,6 +1,6 @@
 import {
 	parse,
-} from "../src/parser";
+} from "../../src/parser";
 
 import {
 	NODE_TAG,
@@ -10,12 +10,12 @@ import {
 	NODE_ATTRIBUTE_VALUE,
 	NODE_ATTRIBUTE_TEMPLATE_VALUE,
 	NODE_EXPRESSION,
-} from "../src/parser/types";
+} from "../../src/parser/types";
 
 import {
 	TOKEN_STRING,
 	TOKEN_EXPRESSION,
-} from "../src/tokenizer/types";
+} from "../../src/tokenizer/types";
 
 
 describe('AST source maps', () => {
@@ -24,10 +24,10 @@ describe('AST source maps', () => {
 		expect(
 			parse('<button/>'),
 		).toMatchObject({
-			type: 'feast::template',
+			type: NODE_TEMPLATE,
 			children: [
 				{
-					type: 'feast::tag',
+					type: NODE_TAG,
 					start: {
 						index: 0,
 						line: 1,
@@ -60,10 +60,10 @@ describe('AST source maps', () => {
 		expect(
 			parse('  <  button / >   '),
 		).toMatchObject({
-			type: 'feast::template',
+			type: NODE_TEMPLATE,
 			children: [
 				{
-					type: 'feast::tag',
+					type: NODE_TAG,
 					start: {
 						index: 2,
 						line: 1,
@@ -96,10 +96,10 @@ describe('AST source maps', () => {
 		expect(
 			parse('  \n\t\t<  button\n\n\t\t />   ', {lineDelimiter: '\n'}),
 		).toMatchObject({
-			type: 'feast::template',
+			type: NODE_TEMPLATE,
 			children: [
 				{
-					type: 'feast::tag',
+					type: NODE_TAG,
 					start: {
 						index: 5,
 						line: 2,
@@ -318,7 +318,7 @@ describe('AST tags', () => {
 												type: TOKEN_EXPRESSION,
 												value: 'alert()',
 											},
-										}
+										},
 									],
 								},
 							],

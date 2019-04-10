@@ -3,6 +3,7 @@ import {
 } from "./line-delimiter-matcher";
 
 import {
+	TOKEN_STRING,
 	TokenType,
 } from "./types";
 
@@ -25,6 +26,7 @@ export interface IToken {
 
 export interface ITokenizerOptions {
 	lineDelimiter?: string;
+	debug?: boolean;
 }
 
 type TokenizerSwitchHandler = (tokenizer: Tokenizer, charCode: number) => any;
@@ -37,9 +39,14 @@ export class Tokenizer {
 		Tokenizer.cases[charCode][<string> <unknown> tokenType] = handler;
 	}
 
-	constructor(public source: string, public lineDelimiterMatcher: LineDelimiterMatcher) {};
+	constructor(
+		public source: string,
+		public lineDelimiterMatcher: LineDelimiterMatcher,
+		public debug: boolean = false,
+	) {};
 
 	public tokenList: IToken[] = [];
+	public debugLog: string[] = [];
 	public currentToken: IToken;
 	public index = 0;
 	public line = 1;
@@ -55,11 +62,34 @@ export class Tokenizer {
 		}
 
 		if (handler) {
+			let prevDebugLog;
+
+			// Debugging all rule applications
+			if (this.debug) {
+				this.debugLog.push(`${charCode}[${String.fromCharCode(charCode)}]: ${handler.name}`);
+				// Debug log stack
+				prevDebugLog = this.debugLog;
+				this.debugLog = [];
+			}
+
 			handler(this, charCode);
+
+			if (this.debug) {
+				prevDebugLog.push.apply(
+					prevDebugLog,
+					this.debugLog.map(_ => `    ${_}`),
+				);
+				// Debug log stack pop
+				this.debugLog = prevDebugLog;
+			}
 		}
 	}
 
 	endToken() {
+		if (!this.currentToken) {
+			return;
+		}
+
 		const firstCharCode = this.source.charCodeAt(this.currentToken.start.index);
 
 		if (
@@ -70,6 +100,10 @@ export class Tokenizer {
 		) {
 			this.currentToken.end.index++;
 			this.currentToken.end.offset++;
+		}
+
+		if (this.currentToken.end.index < this.currentToken.start.index) {
+			this.currentToken.end = {...this.currentToken.start};
 		}
 
 		updateTokenValue(this.source, this.currentToken);
@@ -99,6 +133,15 @@ export function updateTokenValue(source: string, token: IToken) {
 	if (token.end.index < token.start.index) {
 		token.end.index = token.start.index;
 		token.end.offset = token.start.index;
+	}
+
+	// Коррекция невырожденной строки
+	if (
+		token.type === TOKEN_STRING &&
+		(token.end.index - token.start.index) > 1
+	) {
+		token.end.index--;
+		token.end.offset--;
 	}
 
 	token.value = source.substring(

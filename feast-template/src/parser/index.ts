@@ -19,17 +19,22 @@ import {
 	NODE_ATTRIBUTE_VALUE,
 	NODE_TAG,
 	NODE_TEMPLATE,
+	NODE_ATTRIBUTE_TEMPLATE_VALUE,
+	NODE_EXPRESSION,
 	STATE_INITIAL,
 	STATE_TAG_OPEN,
 	STATE_TAG_ATTRIBUTE_NAME,
 	STATE_TAG_ATTRIBUTE_ASSIGN,
 	STATE_TAG_ATTRIBUTE_VALUE,
-	STATE_TAG_CLOSING, NODE_ATTRIBUTE_TEMPLATE_VALUE, NODE_EXPRESSION,
+	STATE_TAG_CLOSING, ParserState,
 } from "./types";
 
 import {
 	tokenize,
 } from "../tokenizer";
+
+// Addons
+import "./addons/template-values";
 
 
 Parser.switch(TOKEN_TAG_OPEN, STATE_INITIAL, (parser, token) => {
